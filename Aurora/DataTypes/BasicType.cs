@@ -1,0 +1,11 @@
+using System.Text.RegularExpressions;
+
+namespace Aurora.DataTypes {
+    public class BasicType : DataType {
+        private Regex validationPattern = new Regex("^[a-zA-Z_0-9]+$");
+
+        public override bool Validate(string data) {
+            return validationPattern.IsMatch(data);
+        }
+    }
+}
