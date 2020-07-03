@@ -9,5 +9,6 @@ namespace Aurora {
         public const int AttributeProperty = 6;
         public const int Model = 7;
         public const int Individual = 8;
+        public const int DataType = 12;
     }
 }
