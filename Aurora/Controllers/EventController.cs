@@ -7,14 +7,14 @@ using AuroraCore.Storage;
 namespace Aurora.Controllers {
     public class EventController : Controller {
         private Dictionary<int, Model> models = new Dictionary<int, Model>();
-        private Dictionary<int, Model> modelOwners = new Dictionary<int, Model>();
         private Dictionary<int, Individual> individuals = new Dictionary<int, Individual>();
+        private AttrModel attrModel = new AttrModel();
+        private Dictionary<int, Attr> attributes = new Dictionary<int, Attr>();
         private TypeManager types = new TypeManager();
 
         public EventController() {
             types.Register<BasicType>("basic_type");
         }
-
 
         [EventReaction(StaticEvent.Event)]
         public void Event(IEventData e) {
@@ -24,6 +24,10 @@ namespace Aurora.Controllers {
         [EventReaction(StaticEvent.SubEvent)]
         public void SubEvent(IEventData e) {
             IEventData parent = State.Get(e.BaseEventID);
+
+            if (e.BaseEventID == StaticEvent.AttributeProperty) {
+                attrModel.RegisterProperty(e.ID, e.Value);
+            }
             Console.WriteLine("SubEvent:: [{0}]{1} of type [{2}]{3}", e.ID, e.Value, parent.ID, parent.Value);
         }
 
@@ -35,10 +39,6 @@ namespace Aurora.Controllers {
                 throw new Exception("Model base can only be another model");
             }
 
-            if (modelOwners.ContainsKey(e.BaseEventID)) {
-                throw new Exception("Only one model per instance is allowed");
-            }
-
             Model parentModel = null;
             if (e.ConditionEventID != StaticEvent.Event) {
                 parentModel = models[parent.ID];
@@ -46,7 +46,6 @@ namespace Aurora.Controllers {
 
             var model = new Model(e.ID, e.Value, parentModel);
             models.Add(e.ID, model);
-            modelOwners.Add(e.BaseEventID, model);
             Console.WriteLine("Model registered:: {0}, Parent:: {1}", e.Value, parent.Value);
         }
 
@@ -55,15 +54,24 @@ namespace Aurora.Controllers {
             var baseEvent = State.Get(e.BaseEventID);
 
             if (baseEvent.ValueID == StaticEvent.Model) {
-                var attr = GetAttrFromEvent(e);
+                int attrID;
+                Attr attr;
+                Model model;
 
-                if (models.TryGetValue(e.BaseEventID, out var model)) {
-                    model.AddAttribute(attr);
-                    Console.WriteLine("Attribute: {0}, Parent: {1}", attr.Name, model.Name);
+                if (!Int32.TryParse(e.Value, out attrID)) {
+                    throw new Exception("Invalid attribute ID: " + e.Value);
                 }
-                else {
+
+                if (!attributes.TryGetValue(attrID, out attr)) {
+                    throw new Exception("Attribute " + attrID + " does not exist");
+                }
+
+                if (!models.TryGetValue(e.BaseEventID, out model)) {
                     throw new Exception("Model " + e.BaseEventID + " does not exist");
                 }
+
+                model.AddAttribute(attr);
+                Console.WriteLine("Attribute: {0}, Parent: {1}", attr.Name, model.Name);
             }
             else if (baseEvent.ValueID == StaticEvent.Individual) {
                 if (individuals.TryGetValue(baseEvent.ID, out var individual)) {
@@ -87,53 +95,44 @@ namespace Aurora.Controllers {
         [EventReaction(StaticEvent.Individual)]
         public void Individual(IEventData e) {
             IEventData parentEvent = State.Get(e.BaseEventID);
+            Model model;
 
-            // Register new DataType
+            if (!models.TryGetValue(e.ConditionEventID, out model)) {
+                throw new Exception("Model " + e.ConditionEventID + " does not exist");
+            }
+
+            var individual = new Individual(e, model);
+            individuals.Add(e.ID, individual);
+            Console.WriteLine("Individual: [{0}]{1} of type [{2}]{3}", e.ID, e.Value, parentEvent.ID, parentEvent.Value);
+
             if (e.BaseEventID == StaticEvent.DataType) {
-                if (types.IsActive(e.Value)) {
-                    throw new Exception("DataType '" + e.Value + "' is already active");
-                }
-                else if (types.IsRegistered(e.Value)) {
-                    types.Activate(e.Value);
-                    Console.WriteLine("DataType: {0} activated", e.Value);
-                }
-                else {
-                    throw new Exception("DataType '" + e.Value + "' is not registered");
-                }
+                types.Activate(e.Value);
             }
 
-            if (modelOwners.TryGetValue(e.BaseEventID, out var model)) {
-                var individual = new Individual(e, model);
-                individuals.Add(e.ID, individual);
-                Console.WriteLine("Individual: [{0}]{1} of type [{2}]{3}", e.ID, e.Value, parentEvent.ID, parentEvent.Value);
+            if (attrModel.PropertyRegistered(e.BaseEventID)) {
+                attrModel.RegisterValue(e.BaseEventID, e.ID, e.Value);
             }
-            else {
-                throw new Exception("Trying to instantiate individual without model");
+            else if (e.BaseEventID == StaticEvent.Attribute) {
+                attributes.Add(e.ID, new Attr(e.ID, e.Value));
             }
         }
 
-        public Attr GetAttrFromEvent(IEventData e) {
-            string defaultValue = null;
+        [EventReaction(StaticEvent.DataType)]
+        public void DataType(IEventData e) {
+            int typeID;
+            Individual typeValue;
 
-            if (!String.IsNullOrEmpty(e.Value)) {
-                IEventData defaultValueEvent = State.Get(Int32.Parse(e.Value));
-                defaultValue = defaultValueEvent.Value;
+            if (!Int32.TryParse(e.Value, out typeID)) {
+                throw new Exception("Invalid DataType: " + e.Value);
             }
 
-            IEventData attrData = e;
-            IEventData parent = State.Get(e.BaseEventID);
-
-            // Find attribute declataion
-            var queue = new Queue<IEventData>(new[] { State.Get(e.ValueID) });
-            while (queue.Count > 0) {
-                attrData = queue.Dequeue();
-
-                if (attrData.BaseEventID != StaticEvent.Attribute) {
-                    queue.Enqueue(State.Get(attrData.BaseEventID));
-                }
+            if (!individuals.TryGetValue(typeID, out typeValue)) {
+                throw new Exception("DataType '" + e.Value + "' is not registered");
             }
 
-            return new Attr(attrData.ID, attrData.Value, defaultValue);
+            if (!types.IsActive(typeValue.Name)) {
+                throw new Exception("Type '" + typeValue.Name + "' is not active");
+            }
         }
     }
 }
