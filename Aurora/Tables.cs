@@ -19,7 +19,7 @@ namespace Aurora {
             new EventData{ ID = 13, BaseEventID = 12, ValueID = 7, Value = "Model_DataType", ConditionEventID = 9, ActorEventID = 0 },
             new EventData{ ID = 14, BaseEventID = 12, ValueID = 8, Value = "basic_type", ConditionEventID = 13, ActorEventID = 0 },
             new EventData{ ID = 15, BaseEventID = 5, ValueID = 7, Value = "Model_Attribute", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 16, BaseEventID = 15, ValueID = 12, Value = "12", ConditionEventID = 15, ActorEventID = 0 },
+            new EventData{ ID = 16, BaseEventID = 15, ValueID = 6, Value = "12", ConditionEventID = 15, ActorEventID = 0 },
             new EventData{ ID = 17, BaseEventID = 5, ValueID = 8, Value = "Name", ConditionEventID = 15, ActorEventID = 0 },
             new EventData{ ID = 18, BaseEventID = 17, ValueID = 12, Value = "14", ConditionEventID = 17, ActorEventID = 0 },
             new EventData{ ID = 19, BaseEventID = 9, ValueID = 5, Value = "17", ConditionEventID = 9, ActorEventID = 0 },
