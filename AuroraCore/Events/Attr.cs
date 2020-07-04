@@ -9,6 +9,11 @@ namespace AuroraCore.Events {
         public string Name { get; private set; }
         public AttrModel Model { get; private set; }
         public DataType Type { get; private set; }
+        public IReadOnlyDictionary<int, int> Properties {
+            get {
+                return properties;
+            }
+        }
 
         public Attr(int id, string name, AttrModel model) : base(id) {
             Name = name;

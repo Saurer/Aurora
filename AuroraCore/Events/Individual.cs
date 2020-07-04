@@ -8,6 +8,11 @@ namespace AuroraCore.Events {
 
         public string Name { get; private set; }
         public Model Model { get; private set; }
+        public IReadOnlyDictionary<int, string> Attributes {
+            get {
+                return attributes;
+            }
+        }
 
         public Individual(int id, string name, Model model) : base(id) {
             Name = name;
