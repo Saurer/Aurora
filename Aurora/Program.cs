@@ -1,8 +1,9 @@
 ﻿using System;
 using Aurora.Controllers;
 using Aurora.DataTypes;
-using AuroraCore;
 using AuroraCore.Storage;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace Aurora {
     public class EventData : IEventData {
@@ -16,16 +17,21 @@ namespace Aurora {
     }
 
     class Program {
-        static void Main(string[] args) {
-            var engine = new EngineBase();
-            engine.AddController<EventController>();
-            engine.AddType<BasicType>("basic_type");
+        public static void Main(string[] args) {
+            Engine.Instance.AddController<EventController>();
+            Engine.Instance.AddType<BasicType>("basic_type");
 
             foreach (var e in Tables.Table) {
-                engine.ProcessEvent(e);
+                Engine.Instance.ProcessEvent(e);
             }
 
-            Console.WriteLine("Done");
+            CreateHostBuilder(args).Build().Run();
         }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder => {
+                    webBuilder.UseStartup<Startup>();
+                });
     }
 }
