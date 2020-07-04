@@ -48,10 +48,9 @@ namespace AuroraCore.Events {
 
             foreach (var item in values) {
                 var attr = GetAttribute(item.Key);
-                // if (String.IsNullOrEmpty(attr.DefaultValue) && String.IsNullOrEmpty(item.Value)) {
-                //     return false;
-                // }
-                // TODO: Type validation
+                if (!attr.Validate(item.Value)) {
+                    return false;
+                }
             }
 
             return true;

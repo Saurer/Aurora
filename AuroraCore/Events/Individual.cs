@@ -19,6 +19,9 @@ namespace AuroraCore.Events {
             if (null == attribute) {
                 throw new Exception("Attribute " + e.ValueID + " does not exist");
             }
+            else if (!attribute.Validate(e.Value)) {
+                throw new Exception("Attribute " + attribute.Name + " is invalid");
+            }
             else {
                 attributes.Add(e.ValueID, e.Value);
             }

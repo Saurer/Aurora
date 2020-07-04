@@ -46,7 +46,16 @@ namespace Aurora.Controllers {
                     throw new Exception("Attribute value " + propertyDefID + " does not exist");
                 }
 
-                attr.SetProperty(e.ValueID, valueIndividual.ID);
+                switch (e.ValueID) {
+                    case StaticEvent.DataType:
+                        attr.SetDataType(e.ValueID, valueIndividual.ID, State.Types.Get(valueIndividual.Name));
+                        break;
+
+                    default:
+                        attr.SetProperty(e.ValueID, valueIndividual.ID);
+                        break;
+                }
+
             }
             else {
                 throw new Exception("Illegal operation");

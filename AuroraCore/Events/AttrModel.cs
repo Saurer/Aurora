@@ -30,6 +30,12 @@ namespace AuroraCore.Events {
             }
         }
 
+        public int PropertyCount {
+            get {
+                return properties.Count;
+            }
+        }
+
         public AttrModel(int id, string name, Model parent = null) : base(id, name, parent) {
         }
 
