@@ -17,6 +17,7 @@ namespace AuroraCore.Types {
                 }
                 else {
                     var instance = (DataType)Activator.CreateInstance(dataType);
+                    instance.Name = name;
                     dataTypes.Add(name, instance);
                 }
             }
