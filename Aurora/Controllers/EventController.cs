@@ -1,21 +1,10 @@
 using System;
-using System.Collections.Generic;
-using Aurora.DataTypes;
 using AuroraCore.Controllers;
+using AuroraCore.Events;
 using AuroraCore.Storage;
 
 namespace Aurora.Controllers {
     public class EventController : Controller {
-        private Dictionary<int, Model> models = new Dictionary<int, Model>();
-        private Dictionary<int, Individual> individuals = new Dictionary<int, Individual>();
-        private AttrModel attrModel = new AttrModel();
-        private Dictionary<int, Attr> attributes = new Dictionary<int, Attr>();
-        private TypeManager types = new TypeManager();
-
-        public EventController() {
-            types.Register<BasicType>("basic_type");
-        }
-
         [EventReaction(StaticEvent.Event)]
         public void Event(IEventData e) {
             State.Register(e);
@@ -26,26 +15,64 @@ namespace Aurora.Controllers {
             IEventData parent = State.Get(e.BaseEventID);
 
             if (e.BaseEventID == StaticEvent.AttributeProperty) {
-                attrModel.RegisterProperty(e.ID, e.Value);
+                State.RegisterAttrProperty(e.ID, e.Value);
             }
             Console.WriteLine("SubEvent:: [{0}]{1} of type [{2}]{3}", e.ID, e.Value, parent.ID, parent.Value);
         }
 
+        [EventReaction(StaticEvent.AttributeProperty)]
+        public void AttributeProperty(IEventData e) {
+            IEventData parent = State.Get(e.BaseEventID);
+            int propertyDefID;
+
+            if (!Int32.TryParse(e.Value, out propertyDefID)) {
+                throw new Exception("Expected ID: " + e.Value);
+            }
+
+            IEventData propertyDef = State.Get(propertyDefID);
+            if (parent.ValueID == StaticEvent.Model && parent.BaseEventID == StaticEvent.Attribute) {
+                State.AttributeModel.RegisterProperty(propertyDef.ID, propertyDef.Value);
+                State.FlushAttrProperties(propertyDef.ID);
+            }
+            else if (parent.BaseEventID == StaticEvent.Attribute) {
+                Attr attr;
+                Individual valueIndividual;
+
+                if (!State.Attributes.TryGetValue(e.BaseEventID, out attr)) {
+                    throw new Exception("Attribute " + e.BaseEventID + " does not exist");
+                }
+
+                if (!State.Individuals.TryGetValue(propertyDefID, out valueIndividual)) {
+                    throw new Exception("Attribute value " + propertyDefID + " does not exist");
+                }
+
+                attr.SetProperty(e.ValueID, valueIndividual.ID);
+            }
+            else {
+                throw new Exception("Illegal operation");
+            }
+        }
+
         [EventReaction(StaticEvent.Model)]
         public void Model(IEventData e) {
+            Model parentModel = null;
             IEventData parent = State.Get(e.ConditionEventID);
 
             if (parent.ValueID != StaticEvent.Model && parent.ValueID != StaticEvent.Event) {
                 throw new Exception("Model base can only be another model");
             }
 
-            Model parentModel = null;
-            if (e.ConditionEventID != StaticEvent.Event) {
-                parentModel = models[parent.ID];
+            if (e.ConditionEventID != StaticEvent.Event && !State.Models.TryGetValue(e.ConditionEventID, out parentModel)) {
+                throw new Exception("Model " + e.ConditionEventID + " does not exist");
             }
 
-            var model = new Model(e.ID, e.Value, parentModel);
-            models.Add(e.ID, model);
+            if (e.BaseEventID == StaticEvent.Attribute) {
+                State.RegisterAttrModel(e.ID, e.Value);
+            }
+            else {
+                State.RegisterModel(e.ID, e.Value, parentModel);
+            }
+
             Console.WriteLine("Model registered:: {0}, Parent:: {1}", e.Value, parent.Value);
         }
 
@@ -62,11 +89,11 @@ namespace Aurora.Controllers {
                     throw new Exception("Invalid attribute ID: " + e.Value);
                 }
 
-                if (!attributes.TryGetValue(attrID, out attr)) {
+                if (!State.Attributes.TryGetValue(attrID, out attr)) {
                     throw new Exception("Attribute " + attrID + " does not exist");
                 }
 
-                if (!models.TryGetValue(e.BaseEventID, out model)) {
+                if (!State.Models.TryGetValue(e.BaseEventID, out model)) {
                     throw new Exception("Model " + e.BaseEventID + " does not exist");
                 }
 
@@ -74,7 +101,7 @@ namespace Aurora.Controllers {
                 Console.WriteLine("Attribute: {0}, Parent: {1}", attr.Name, model.Name);
             }
             else if (baseEvent.ValueID == StaticEvent.Individual) {
-                if (individuals.TryGetValue(baseEvent.ID, out var individual)) {
+                if (State.Individuals.TryGetValue(baseEvent.ID, out var individual)) {
                     var attribute = State.Get(e.ValueID);
                     individual.SetAttribute(e);
                     Console.WriteLine("Set attribute [{0}]{1} of individual [{2}]{3} to value {4}",
@@ -97,23 +124,22 @@ namespace Aurora.Controllers {
             IEventData parentEvent = State.Get(e.BaseEventID);
             Model model;
 
-            if (!models.TryGetValue(e.ConditionEventID, out model)) {
+            if (!State.Models.TryGetValue(e.ConditionEventID, out model)) {
                 throw new Exception("Model " + e.ConditionEventID + " does not exist");
             }
 
-            var individual = new Individual(e, model);
-            individuals.Add(e.ID, individual);
-            Console.WriteLine("Individual: [{0}]{1} of type [{2}]{3}", e.ID, e.Value, parentEvent.ID, parentEvent.Value);
+            var individual = State.RegisterIndividual(e.ID, e.Value, model);
+            Console.WriteLine("Individual: [{0}]{1} of type [{2}]{3}", individual.ID, individual.Name, parentEvent.ID, parentEvent.Value);
 
             if (e.BaseEventID == StaticEvent.DataType) {
-                types.Activate(e.Value);
+                State.Types.Activate(e.Value);
             }
 
-            if (attrModel.PropertyRegistered(e.BaseEventID)) {
-                attrModel.RegisterValue(e.BaseEventID, e.ID, e.Value);
+            if (State.PropertyRegistered(e.BaseEventID)) {
+                State.RegisterAttrPropertyValue(e.BaseEventID, e.ID, e.Value);
             }
             else if (e.BaseEventID == StaticEvent.Attribute) {
-                attributes.Add(e.ID, new Attr(e.ID, e.Value));
+                State.RegisterAttr(e.ID, e.Value);
             }
         }
 
@@ -126,11 +152,11 @@ namespace Aurora.Controllers {
                 throw new Exception("Invalid DataType: " + e.Value);
             }
 
-            if (!individuals.TryGetValue(typeID, out typeValue)) {
+            if (!State.Individuals.TryGetValue(typeID, out typeValue)) {
                 throw new Exception("DataType '" + e.Value + "' is not registered");
             }
 
-            if (!types.IsActive(typeValue.Name)) {
+            if (!State.Types.IsActive(typeValue.Name)) {
                 throw new Exception("Type '" + typeValue.Name + "' is not active");
             }
         }

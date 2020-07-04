@@ -2,17 +2,15 @@ using System;
 using System.Collections.Generic;
 using AuroraCore.Storage;
 
-namespace Aurora.Controllers {
-    public class Individual {
+namespace AuroraCore.Events {
+    public class Individual : Event {
         private Dictionary<int, string> attributes = new Dictionary<int, string>();
 
-        public int ID { get; private set; }
         public string Name { get; private set; }
         public Model Model { get; private set; }
 
-        public Individual(IEventData e, Model model) {
-            ID = e.ID;
-            Name = e.Value;
+        public Individual(int id, string name, Model model) : base(id) {
+            Name = name;
             Model = model;
         }
 

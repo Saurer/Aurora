@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 
-namespace Aurora.Controllers {
-    public sealed class AttrModel {
+namespace AuroraCore.Events {
+    public sealed class AttrModel : Model {
         private Dictionary<int, AttrProperty> properties = new Dictionary<int, AttrProperty>();
 
         public class AttrProperty {
@@ -10,15 +10,27 @@ namespace Aurora.Controllers {
 
             public int ID { get; private set; }
             public string Name { get; private set; }
+            public IReadOnlyDictionary<int, string> Values {
+                get {
+                    return values;
+                }
+            }
 
             public void RegisterValue(int id, string value) {
                 values.Add(id, value);
+            }
+
+            public bool ContainsValue(int id) {
+                return values.ContainsKey(id);
             }
 
             public AttrProperty(int id, string name) {
                 ID = id;
                 Name = name;
             }
+        }
+
+        public AttrModel(int id, string name, Model parent = null) : base(id, name, parent) {
         }
 
         public void RegisterProperty(int id, string name) {
@@ -34,8 +46,13 @@ namespace Aurora.Controllers {
             }
         }
 
-        public bool PropertyRegistered(int propertyID) {
-            return properties.ContainsKey(propertyID);
+        public AttrProperty GetProperty(int id) {
+            if (properties.TryGetValue(id, out var property)) {
+                return property;
+            }
+            else {
+                throw new Exception("Property " + id + " is not defined");
+            }
         }
     }
 }

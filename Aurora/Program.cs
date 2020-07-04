@@ -1,5 +1,6 @@
 ﻿using System;
 using Aurora.Controllers;
+using Aurora.DataTypes;
 using AuroraCore;
 using AuroraCore.Storage;
 
@@ -18,6 +19,7 @@ namespace Aurora {
         static void Main(string[] args) {
             var engine = new EngineBase();
             engine.AddController<EventController>();
+            engine.AddType<BasicType>("basic_type");
 
             foreach (var e in Tables.Table) {
                 engine.ProcessEvent(e);

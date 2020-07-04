@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Aurora.DataTypes {
+namespace AuroraCore.Types {
     public class TypeManager {
         private Dictionary<string, Type> registry = new Dictionary<string, Type>();
         private Dictionary<string, DataType> dataTypes = new Dictionary<string, DataType>();

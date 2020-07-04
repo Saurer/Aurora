@@ -1,17 +1,14 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Aurora.Controllers {
-    public class Model {
+namespace AuroraCore.Events {
+    public class Model : Event {
         private Dictionary<int, Attr> attributes = new Dictionary<int, Attr>();
 
-        public int ID { get; private set; }
         public Model Parent { get; private set; }
         public string Name { get; private set; }
 
-        public Model(int id, string name, Model parent = null) {
-            ID = id;
+        public Model(int id, string name, Model parent = null) : base(id) {
             Name = name;
             Parent = parent;
         }
@@ -51,9 +48,9 @@ namespace Aurora.Controllers {
 
             foreach (var item in values) {
                 var attr = GetAttribute(item.Key);
-                if (String.IsNullOrEmpty(attr.DefaultValue) && String.IsNullOrEmpty(item.Value)) {
-                    return false;
-                }
+                // if (String.IsNullOrEmpty(attr.DefaultValue) && String.IsNullOrEmpty(item.Value)) {
+                //     return false;
+                // }
                 // TODO: Type validation
             }
 

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using AuroraCore.Types;
 
 namespace Aurora.DataTypes {
     public class BasicType : DataType {

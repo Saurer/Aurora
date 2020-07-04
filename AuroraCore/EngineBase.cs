@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using AuroraCore.Controllers;
 using AuroraCore.Storage;
+using AuroraCore.Types;
 
 namespace AuroraCore {
     public class EngineBase {
@@ -48,6 +49,10 @@ namespace AuroraCore {
                 });
             }
             controllers.Add(controller);
+        }
+
+        public void AddType<T>(string name) where T : DataType {
+            state.Types.Register<T>(name);
         }
 
         public void ProcessEvent(IEventData e) {
