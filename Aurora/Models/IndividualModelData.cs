@@ -12,7 +12,7 @@ namespace Aurora.Models {
         public IndividualModelData(Model model, IReadOnlyDictionary<int, string> values) {
             ID = model.ID;
             Name = model.Name;
-            Parent = model?.Parent.ID ?? 0;
+            Parent = model.Parent?.ID ?? 0;
             Attributes =
                 from a in model.GetAttributes()
                 select new IndividualAttrData(a, values.ContainsKey(a.ID) ? values[a.ID] : null);
