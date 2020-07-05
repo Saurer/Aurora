@@ -5,6 +5,12 @@ namespace AuroraCore.Events {
     public sealed class AttrModel : Model {
         private Dictionary<int, AttrProperty> properties = new Dictionary<int, AttrProperty>();
 
+        public IReadOnlyDictionary<int, AttrProperty> Properties {
+            get {
+                return properties;
+            }
+        }
+
         public class AttrProperty {
             private Dictionary<int, string> values = new Dictionary<int, string>();
 
