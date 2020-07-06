@@ -9,9 +9,9 @@ namespace Aurora.Models {
         public string Type { get; private set; }
         public IEnumerable<AttrPropertyData> Properties { get; private set; }
 
-        public AttrData(Attr attr) {
+        public AttrData(IAttr attr) {
             ID = attr.ID;
-            Name = attr.Name;
+            Name = attr.Value;
             Type = attr.Type.Name;
             Properties = from p in attr.Properties select new AttrPropertyData(p.Key, p.Value);
         }

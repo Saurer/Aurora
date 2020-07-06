@@ -6,9 +6,9 @@ namespace Aurora.Models {
         public string Name { get; private set; }
         public IndividualModelData Model { get; private set; }
 
-        public IndividualData(Individual individual) {
+        public IndividualData(IIndividual individual) {
             ID = individual.ID;
-            Name = individual.Name;
+            Name = individual.Value;
             Model = new IndividualModelData(individual.Model, individual.Attributes);
         }
     }

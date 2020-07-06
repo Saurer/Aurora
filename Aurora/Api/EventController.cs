@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Aurora.Models;
+using AuroraCore.Events;
 
 namespace Aurora.Api {
     [ApiController]
@@ -7,7 +8,7 @@ namespace Aurora.Api {
     public class EventController : ControllerBase {
         [HttpGet]
         public ActionResult Model(int id) {
-            if (Engine.Instance.State.Models.TryGetValue(id, out var model)) {
+            if (Engine.Instance.State.TryGetValue(id, out IModel model)) {
                 return Ok(new ModelData(model));
             }
 
@@ -16,7 +17,7 @@ namespace Aurora.Api {
 
         [HttpGet]
         public ActionResult Individual(int id) {
-            if (Engine.Instance.State.Individuals.TryGetValue(id, out var individual)) {
+            if (Engine.Instance.State.TryGetValue(id, out IIndividual individual)) {
                 return Ok(new IndividualData(individual));
             }
 
@@ -25,7 +26,7 @@ namespace Aurora.Api {
 
         [HttpGet]
         public ActionResult Attribute(int id) {
-            if (Engine.Instance.State.Attributes.TryGetValue(id, out var attr)) {
+            if (Engine.Instance.State.TryGetValue(id, out IAttr attr)) {
                 return Ok(new AttrData(attr));
             }
 

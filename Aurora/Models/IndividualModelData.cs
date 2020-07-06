@@ -9,9 +9,9 @@ namespace Aurora.Models {
         public int Parent { get; private set; }
         public IEnumerable<IndividualAttrData> Attributes { get; private set; }
 
-        public IndividualModelData(Model model, IReadOnlyDictionary<int, string> values) {
+        public IndividualModelData(IModel model, IReadOnlyDictionary<int, string> values) {
             ID = model.ID;
-            Name = model.Name;
+            Name = model.Value;
             Parent = model.Parent?.ID ?? 0;
             Attributes =
                 from a in model.GetAttributes()

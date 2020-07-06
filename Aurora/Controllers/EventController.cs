@@ -1,60 +1,64 @@
 using System;
+using AuroraCore;
 using AuroraCore.Controllers;
 using AuroraCore.Events;
 using AuroraCore.Storage;
+using AuroraCore.Transactions;
 
 namespace Aurora.Controllers {
     public class EventController : Controller {
         [EventReaction(StaticEvent.Event)]
-        public void Event(IEventData e) {
-            State.Register(e);
+        public void Event(IEventData e, Transaction tx) {
+            tx.AddEvent(e);
         }
 
         [EventReaction(StaticEvent.SubEvent)]
-        public void SubEvent(IEventData e) {
-            IEventData parent = State.Get(e.BaseEventID);
+        public void SubEvent(IEventData e, Transaction tx) {
+            IEventData parent;
+
+            if (!State.TryGetEvent(e.BaseEventID, out parent)) {
+                throw new Exception($"Event '{e.BaseEventID}' does not exist");
+            }
 
             if (e.BaseEventID == StaticEvent.AttributeProperty) {
-                State.RegisterAttrProperty(e.ID, e.Value);
+                tx.AddAttrProperty(e.ID, e.Value);
             }
-            Console.WriteLine("SubEvent:: [{0}]{1} of type [{2}]{3}", e.ID, e.Value, parent.ID, parent.Value);
         }
 
         [EventReaction(StaticEvent.AttributeProperty)]
-        public void AttributeProperty(IEventData e) {
-            IEventData parent = State.Get(e.BaseEventID);
+        public void AttributeProperty(IEventData e, Transaction tx) {
+            IEventData parent;
+            IEventData propertyDef;
             int propertyDefID;
 
-            if (!Int32.TryParse(e.Value, out propertyDefID)) {
-                throw new Exception("Expected ID: " + e.Value);
+            if (!State.TryGetEvent(e.BaseEventID, out parent)) {
+                throw new Exception($"Base event {e.BaseEventID} does not exist");
             }
 
-            IEventData propertyDef = State.Get(propertyDefID);
+            if (!Int32.TryParse(e.Value, out propertyDefID)) {
+                throw new Exception($"Expected ID: '{e.Value}'");
+            }
+
+            if (!State.TryGetEvent(propertyDefID, out propertyDef)) {
+                throw new Exception($"Property definition {propertyDefID} does not exist");
+            }
+
             if (parent.ValueID == StaticEvent.Model && parent.BaseEventID == StaticEvent.Attribute) {
-                State.AttributeModel.RegisterProperty(propertyDef.ID, propertyDef.Value);
-                State.FlushAttrProperties(propertyDef.ID);
+                tx.AddAttrProperty(propertyDef.ID, propertyDef.Value);
             }
             else if (parent.BaseEventID == StaticEvent.Attribute) {
-                Attr attr;
-                Individual valueIndividual;
+                IAttr attr;
+                IIndividual valueIndividual;
 
-                if (!State.Attributes.TryGetValue(e.BaseEventID, out attr)) {
+                if (!State.TryGetValue(e.BaseEventID, out attr)) {
                     throw new Exception("Attribute " + e.BaseEventID + " does not exist");
                 }
 
-                if (!State.Individuals.TryGetValue(propertyDefID, out valueIndividual)) {
+                if (!State.TryGetValue(propertyDefID, out valueIndividual)) {
                     throw new Exception("Attribute value " + propertyDefID + " does not exist");
                 }
 
-                switch (e.ValueID) {
-                    case StaticEvent.DataType:
-                        attr.SetDataType(e.ValueID, valueIndividual.ID, State.Types.Get(valueIndividual.Name));
-                        break;
-
-                    default:
-                        attr.SetProperty(e.ValueID, valueIndividual.ID);
-                        break;
-                }
+                tx.SetAttrProperty(attr.ID, e.ValueID, valueIndividual.ID);
 
             }
             else {
@@ -63,65 +67,65 @@ namespace Aurora.Controllers {
         }
 
         [EventReaction(StaticEvent.Model)]
-        public void Model(IEventData e) {
-            Model parentModel = null;
-            IEventData parent = State.Get(e.ConditionEventID);
+        public void Model(IEventData e, Transaction tx) {
+            IModel parentModel = null;
+            IEventData parent;
+
+            if (!State.TryGetEvent(e.ConditionEventID, out parent)) {
+                throw new Exception($"Event '{e.ConditionEventID}' does not exist");
+            }
 
             if (parent.ValueID != StaticEvent.Model && parent.ValueID != StaticEvent.Event) {
                 throw new Exception("Model base can only be another model");
             }
 
-            if (e.ConditionEventID != StaticEvent.Event && !State.Models.TryGetValue(e.ConditionEventID, out parentModel)) {
+            if (e.ConditionEventID != StaticEvent.Event && !State.TryGetValue(e.ConditionEventID, out parentModel)) {
                 throw new Exception("Model " + e.ConditionEventID + " does not exist");
             }
 
-            if (e.BaseEventID == StaticEvent.Attribute) {
-                State.RegisterAttrModel(e.ID, e.Value);
-            }
-            else {
-                State.RegisterModel(e.ID, e.Value, parentModel);
-            }
-
-            Console.WriteLine("Model registered:: {0}, Parent:: {1}", e.Value, parent.Value);
+            tx.AddModel(e, parentModel);
         }
 
         [EventReaction(StaticEvent.Attribute)]
-        public void Attribute(IEventData e) {
-            var baseEvent = State.Get(e.BaseEventID);
+        public void Attribute(IEventData e, Transaction tx) {
+            IEventData baseEvent;
+
+            if (!State.TryGetEvent(e.BaseEventID, out baseEvent)) {
+                throw new Exception($"Event '{e.BaseEventID}' does not exist");
+            }
 
             if (baseEvent.ValueID == StaticEvent.Model) {
                 int attrID;
-                Attr attr;
-                Model model;
+                IAttr attr;
+                IModel model;
 
                 if (!Int32.TryParse(e.Value, out attrID)) {
                     throw new Exception("Invalid attribute ID: " + e.Value);
                 }
 
-                if (!State.Attributes.TryGetValue(attrID, out attr)) {
+                if (!State.TryGetValue(attrID, out attr)) {
                     throw new Exception("Attribute " + attrID + " does not exist");
                 }
 
-                if (!State.Models.TryGetValue(e.BaseEventID, out model)) {
+                if (!State.TryGetValue(e.BaseEventID, out model)) {
                     throw new Exception("Model " + e.BaseEventID + " does not exist");
                 }
 
-                model.AddAttribute(attr);
-                Console.WriteLine("Attribute: {0}, Parent: {1}", attr.Name, model.Name);
+                tx.AddModelAttribute(model.ID, attr);
             }
             else if (baseEvent.ValueID == StaticEvent.Individual) {
-                if (State.Individuals.TryGetValue(baseEvent.ID, out var individual)) {
-                    var attribute = State.Get(e.ValueID);
-                    individual.SetAttribute(e);
-                    Console.WriteLine("Set attribute [{0}]{1} of individual [{2}]{3} to value {4}",
-                        attribute.ID, attribute.Value,
-                        individual.ID, individual.Name,
-                        e.Value
-                    );
-                }
-                else {
+                IIndividual individual;
+                IEventData attribute;
+
+                if (!State.TryGetValue(baseEvent.ID, out individual)) {
                     throw new Exception("Individual " + baseEvent.ID + " does not exist");
                 }
+
+                if (!State.TryGetEvent(e.ValueID, out attribute)) {
+                    throw new Exception($"Event '{e.ValueID}' does not exist");
+                }
+
+                tx.AddIndividualAttribute(individual.ID, e.ValueID, e.Value);
             }
             else {
                 throw new Exception("Attribute can be added only to a model or an individual");
@@ -129,44 +133,49 @@ namespace Aurora.Controllers {
         }
 
         [EventReaction(StaticEvent.Individual)]
-        public void Individual(IEventData e) {
-            IEventData parentEvent = State.Get(e.BaseEventID);
-            Model model;
+        public void Individual(IEventData e, Transaction tx) {
+            IEventData parentEvent;
+            IModel model;
 
-            if (!State.Models.TryGetValue(e.ConditionEventID, out model)) {
+            if (!State.TryGetEvent(e.BaseEventID, out parentEvent)) {
+                throw new Exception($"Event '{e.BaseEventID}' does not exist");
+            }
+
+            if (!State.TryGetValue(e.ConditionEventID, out model)) {
                 throw new Exception("Model " + e.ConditionEventID + " does not exist");
             }
 
-            var individual = State.RegisterIndividual(e.ID, e.Value, model);
-            Console.WriteLine("Individual: [{0}]{1} of type [{2}]{3}", individual.ID, individual.Name, parentEvent.ID, parentEvent.Value);
-
             if (e.BaseEventID == StaticEvent.DataType) {
-                State.Types.Activate(e.Value);
+                tx.ActivateType(e.ID, e.Value);
             }
 
             if (State.PropertyRegistered(e.BaseEventID)) {
-                State.RegisterAttrPropertyValue(e.BaseEventID, e.ID, e.Value);
+                tx.AddAttrPropertyValue(e.BaseEventID, e.ID, e.Value);
+                tx.AddIndividual(e, model);
             }
             else if (e.BaseEventID == StaticEvent.Attribute) {
-                State.RegisterAttr(e.ID, e.Value);
+                tx.AddAttr(e);
+            }
+            else {
+                tx.AddIndividual(e, model);
             }
         }
 
         [EventReaction(StaticEvent.DataType)]
-        public void DataType(IEventData e) {
+        public void DataType(IEventData e, Transaction tx) {
             int typeID;
-            Individual typeValue;
+            IIndividual typeValue;
 
             if (!Int32.TryParse(e.Value, out typeID)) {
                 throw new Exception("Invalid DataType: " + e.Value);
             }
 
-            if (!State.Individuals.TryGetValue(typeID, out typeValue)) {
+            if (!State.TryGetValue(typeID, out typeValue)) {
                 throw new Exception("DataType '" + e.Value + "' is not registered");
             }
 
-            if (!State.Types.IsActive(typeValue.Name)) {
-                throw new Exception("Type '" + typeValue.Name + "' is not active");
+            if (!State.Types.IsActive(typeValue.Value)) {
+                throw new Exception("Type '" + typeValue.Value + "' is not active");
             }
         }
     }
