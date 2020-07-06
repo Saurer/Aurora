@@ -1,23 +1,29 @@
 using System.Collections.Generic;
 using System.Linq;
+using AuroraCore.Storage;
 
 namespace AuroraCore.Events {
-    public class Model : Event {
-        private Dictionary<int, Attr> attributes = new Dictionary<int, Attr>();
+    public interface IModel : IEvent {
+        IModel Parent { get; }
+        IAttr GetAttribute(int id);
+        IEnumerable<IAttr> GetAttributes();
+        bool Validate(IReadOnlyDictionary<int, string> values);
+    }
 
-        public Model Parent { get; private set; }
-        public string Name { get; private set; }
+    internal class Model : Event, IModel {
+        private Dictionary<int, IAttr> attributes = new Dictionary<int, IAttr>();
 
-        public Model(int id, string name, Model parent = null) : base(id) {
-            Name = name;
+        public IModel Parent { get; private set; }
+
+        public Model(IEventData e, IModel parent = null) : base(e) {
             Parent = parent;
         }
 
-        public void AddAttribute(Attr attr) {
+        public void AddAttribute(IAttr attr) {
             attributes.Add(attr.ID, attr);
         }
 
-        public Attr GetAttribute(int id) {
+        public IAttr GetAttribute(int id) {
             if (attributes.TryGetValue(id, out var value)) {
                 return value;
             }
@@ -29,13 +35,14 @@ namespace AuroraCore.Events {
             }
         }
 
-        public IEnumerable<Attr> GetAttributes() {
+        public IEnumerable<IAttr> GetAttributes() {
             foreach (var attrValue in attributes) {
                 yield return attrValue.Value;
             }
 
             if (null != Parent) {
-                foreach (var attrValue in Parent.attributes) {
+                var parent = (Model)Parent;
+                foreach (var attrValue in parent.attributes) {
                     yield return attrValue.Value;
                 }
             }

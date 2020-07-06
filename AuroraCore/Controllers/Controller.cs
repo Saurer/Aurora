@@ -4,9 +4,9 @@ using System.Reflection;
 
 namespace AuroraCore.Controllers {
     public abstract class Controller {
-        protected TransientState State { get; private set; }
+        protected ITransientState State { get; private set; }
 
-        public static T Instantiate<T>(TransientState state) where T : Controller, new() {
+        public static T Instantiate<T>(ITransientState state) where T : Controller, new() {
             T value = new T();
             value.State = state;
             return value;

@@ -2,12 +2,12 @@ using System;
 
 namespace AuroraCore.Storage {
     public interface IEventData {
-        int ID { get; set; }
-        int BaseEventID { get; set; }
-        int ValueID { get; set; }
-        int ConditionEventID { get; set; }
-        int ActorEventID { get; set; }
-        string Value { get; set; }
-        DateTime Date { get; set; }
+        int ID { get; }
+        int BaseEventID { get; }
+        int ValueID { get; }
+        int ConditionEventID { get; }
+        int ActorEventID { get; }
+        string Value { get; }
+        DateTime Date { get; }
     }
 }

@@ -5,52 +5,36 @@ using AuroraCore.Storage;
 using AuroraCore.Types;
 
 namespace AuroraCore.Controllers {
-    public class TransientState {
+    public interface ITransientState {
+        ITypeManager Types { get; }
+        bool TryGetEvent(int id, out IEventData value);
+        bool TryGetValue<T>(int id, out T value) where T : IEvent;
+        bool PropertyRegistered(int id);
+    }
+
+    internal class TransientState : ITransientState {
         private Dictionary<int, IEventData> events = new Dictionary<int, IEventData>();
         private Dictionary<int, List<IEventData>> descendants = new Dictionary<int, List<IEventData>>();
         private Dictionary<int, int> ancestors = new Dictionary<int, int>();
-        private Dictionary<int, Model> models = new Dictionary<int, Model>();
-        private Dictionary<int, Individual> individuals = new Dictionary<int, Individual>();
-        private AttrModel attrModel;
-        private Dictionary<int, AttrModel.AttrProperty> attrProperties = new Dictionary<int, AttrModel.AttrProperty>();
-        private Dictionary<int, Attr> attributes = new Dictionary<int, Attr>();
+        private Dictionary<int, IEvent> subEvents = new Dictionary<int, IEvent>();
+        private Dictionary<int, IAttrProperty> attrProperties = new Dictionary<int, IAttrProperty>();
         private TypeManager types = new TypeManager();
 
-        public TypeManager Types {
+        public ITypeManager Types {
             get {
                 return types;
             }
         }
 
-        public AttrModel AttributeModel {
-            get {
-                if (null == attrModel) {
-                    throw new Exception("Attribute model is not instantiated");
-                }
+        internal AttrModel AttributeModel { get; set; }
 
-                return attrModel;
+        internal IReadOnlyDictionary<int, IEvent> Values {
+            get {
+                return subEvents;
             }
         }
 
-        public IReadOnlyDictionary<int, Attr> Attributes {
-            get {
-                return attributes;
-            }
-        }
-
-        public IReadOnlyDictionary<int, Model> Models {
-            get {
-                return models;
-            }
-        }
-
-        public IReadOnlyDictionary<int, Individual> Individuals {
-            get {
-                return individuals;
-            }
-        }
-
-        public void Register(IEventData e) {
+        internal void Register(IEventData e) {
             if (events.TryGetValue(e.BaseEventID, out var parent) || IsGenesisValue(e)) {
                 events[e.ID] = e;
 
@@ -66,11 +50,11 @@ namespace AuroraCore.Controllers {
             }
         }
 
-        public IEventData Get(int eventID) {
-            return events[eventID];
+        internal void AddValue<T>(int id, T value) where T : IEvent {
+            subEvents.Add(id, value);
         }
 
-        public bool IsEventAncestor(int ancestor, int checkValue) {
+        internal bool IsEventAncestor(int ancestor, int checkValue) {
             var queue = new Queue<int>(new[] { checkValue });
             while (queue.Count > 0) {
                 int eventID = queue.Dequeue();
@@ -87,51 +71,53 @@ namespace AuroraCore.Controllers {
             return false;
         }
 
-        public AttrModel RegisterAttrModel(int id, string name, Model parent = null) {
-            if (null != attrModel) {
-                throw new Exception("Unable to instantiate AttrModel since it already exists");
-            }
-
-            attrModel = new AttrModel(id, name, parent);
-            models.Add(id, attrModel);
-            return attrModel;
-        }
-
-        public void RegisterAttrProperty(int id, string name) {
-            attrProperties.Add(id, new AttrModel.AttrProperty(id, name));
-        }
-
-        public void RegisterAttrPropertyValue(int id, int propertyID, string value) {
-            attrProperties[id].RegisterValue(propertyID, value);
-        }
-
-        public Attr RegisterAttr(int id, string name) {
-            var attr = new Attr(id, name, attrModel);
-            attributes.Add(id, attr);
-            return attr;
-        }
-
-        public Model RegisterModel(int id, string name, Model parent = null) {
-            var model = new Model(id, name, parent);
-            models.Add(id, model);
-            return model;
-        }
-
-        public Individual RegisterIndividual(int id, string name, Model model) {
-            var individual = new Individual(id, name, model);
-            individuals.Add(id, individual);
-            return individual;
-        }
-
         public bool PropertyRegistered(int id) {
             return attrProperties.ContainsKey(id);
         }
 
-        public void FlushAttrProperties(int propertyID) {
-            var property = attrProperties[propertyID];
+        public bool TryGetEvent(int id, out IEventData value) {
+            if (events.TryGetValue(id, out value)) {
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
+
+        public bool TryGetValue<T>(int id, out T value) where T : IEvent {
+            IEvent subEvent;
+
+            if (!subEvents.TryGetValue(id, out subEvent)) {
+                value = default(T);
+                return false;
+            }
+
+            if (!(subEvent is T)) {
+                value = default(T);
+                return false;
+            }
+
+            value = (T)subEvent;
+            return true;
+        }
+
+        internal void AddPendingAttrProperty(IAttrProperty prop) {
+            attrProperties.Add(prop.ID, prop);
+        }
+
+        internal AttrProperty GetPendingAttrProperty(int id) {
+            return (AttrProperty)attrProperties[id];
+        }
+
+        internal void FlushAttrProperties(int propertyID) {
+            IAttrProperty property;
+
+            if (!attrProperties.TryGetValue(propertyID, out property)) {
+                return;
+            }
 
             foreach (var kv in property.Values) {
-                attrModel.RegisterValue(propertyID, kv.Key, kv.Value);
+                AttributeModel.RegisterValue(propertyID, kv.Key, kv.Value);
             }
 
             attrProperties.Remove(propertyID);

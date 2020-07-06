@@ -1,13 +1,21 @@
 using System;
 using System.Collections.Generic;
+using AuroraCore.Storage;
 using AuroraCore.Types;
 
 namespace AuroraCore.Events {
-    public sealed class Attr : Event {
+    public interface IAttr : IEvent {
+        IAttrModel Model { get; }
+        DataType Type { get; }
+        IReadOnlyDictionary<int, int> Properties { get; }
+        int GetProperty(int id);
+        bool Validate(string value);
+    }
+
+    internal sealed class Attr : Event, IAttr {
         private Dictionary<int, int> properties = new Dictionary<int, int>();
 
-        public string Name { get; private set; }
-        public AttrModel Model { get; private set; }
+        public IAttrModel Model { get; private set; }
         public DataType Type { get; private set; }
         public IReadOnlyDictionary<int, int> Properties {
             get {
@@ -15,8 +23,7 @@ namespace AuroraCore.Events {
             }
         }
 
-        public Attr(int id, string name, AttrModel model) : base(id) {
-            Name = name;
+        public Attr(IEventData e, IAttrModel model) : base(e) {
             Model = model;
         }
 
@@ -45,7 +52,7 @@ namespace AuroraCore.Events {
         }
 
         public bool Validate(string value) {
-            if (properties.Count != Model.PropertyCount) {
+            if (properties.Count != Model.Properties.Count) {
                 return false;
             }
 

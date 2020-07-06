@@ -3,36 +3,38 @@ using System.Collections.Generic;
 using AuroraCore.Storage;
 
 namespace AuroraCore.Events {
-    public class Individual : Event {
+    public interface IIndividual : IEvent {
+        IModel Model { get; }
+        IReadOnlyDictionary<int, string> Attributes { get; }
+    }
+
+    internal class Individual : Event, IIndividual {
         private Dictionary<int, string> attributes = new Dictionary<int, string>();
 
-        public string Name { get; private set; }
-        public Model Model { get; private set; }
+        public IModel Model { get; private set; }
         public IReadOnlyDictionary<int, string> Attributes {
             get {
                 return attributes;
             }
         }
 
-        public Individual(int id, string name, Model model) : base(id) {
-            Name = name;
+        public Individual(IEventData e, IModel model) : base(e) {
             Model = model;
         }
 
-        public void SetAttribute(IEventData e) {
-            Attr attribute = Model.GetAttribute(e.ValueID);
+        public void SetAttribute(int attributeID, string value) {
+            var attribute = Model.GetAttribute(attributeID);
             if (null == attribute) {
-                throw new Exception("Attribute " + e.ValueID + " does not exist");
+                throw new Exception("Attribute " + attributeID + " does not exist");
             }
-            else if (!attribute.Validate(e.Value)) {
-                throw new Exception("Attribute " + attribute.Name + " is invalid");
+            else if (!attribute.Validate(value)) {
+                throw new Exception("Attribute " + attribute.Value + " is invalid");
             }
             else {
-                attributes.Add(e.ValueID, e.Value);
+                attributes.Add(attributeID, value);
             }
 
             bool valid = Model.Validate(attributes);
-            Console.WriteLine("Individual [{0}]{1} is {2}", ID, Name, valid ? "valid" : "invalid");
         }
     }
 }
