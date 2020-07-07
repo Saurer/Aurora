@@ -1,14 +1,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using AuroraCore.Storage;
 
 namespace AuroraCore.Controllers {
     public abstract class Controller {
-        protected ITransientState State { get; private set; }
+        protected IStorageAdapter Storage { get; private set; }
 
-        public static T Instantiate<T>(ITransientState state) where T : Controller, new() {
+        public static T Instantiate<T>(IStorageAdapter storage) where T : Controller, new() {
             T value = new T();
-            value.State = state;
+            value.Storage = storage;
             return value;
         }
 

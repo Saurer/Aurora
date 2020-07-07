@@ -1,6 +1,8 @@
 using System.Linq;
 using System.Collections.Generic;
-using AuroraCore.Events;
+using AuroraCore.Storage;
+using System.Threading.Tasks;
+using System;
 
 namespace Aurora.Models {
     public class AttrData {
@@ -9,11 +11,23 @@ namespace Aurora.Models {
         public string Type { get; private set; }
         public IEnumerable<AttrPropertyData> Properties { get; private set; }
 
-        public AttrData(IAttr attr) {
-            ID = attr.ID;
-            Name = attr.Value;
-            Type = attr.Type.Name;
-            Properties = from p in attr.Properties select new AttrPropertyData(p.Key, p.Value);
+        private AttrData() {
+
+        }
+
+        public static async Task<AttrData> Instantiate(IAttr attr) {
+            var plainProperties = await attr.GetProperties();
+            var dataType = await attr.GetDataType();
+            var properties =
+                from p in plainProperties
+                select new AttrPropertyData(p.BaseEventID, Int32.Parse(p.Value));
+
+            return new AttrData {
+                ID = attr.ID,
+                Name = attr.Value,
+                Type = dataType.Name,
+                Properties = properties
+            };
         }
     }
 }

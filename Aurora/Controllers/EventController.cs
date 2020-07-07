@@ -1,65 +1,64 @@
 using System;
+using System.Threading.Tasks;
 using AuroraCore;
 using AuroraCore.Controllers;
-using AuroraCore.Events;
 using AuroraCore.Storage;
-using AuroraCore.Transactions;
 
 namespace Aurora.Controllers {
     public class EventController : Controller {
         [EventReaction(StaticEvent.Event)]
-        public void Event(IEventData e, Transaction tx) {
-            tx.AddEvent(e);
+        public async Task Event(IEvent e) {
+            var existingEvent = await Storage.GetEvent(e.ID);
+            var conditionEvent = await Storage.GetEvent(e.ConditionEventID);
+
+            if (null != existingEvent) {
+                throw new Exception($"Event '{e.ID}' already exists");
+            }
+
+            if (0 != e.ID && null == conditionEvent) {
+                throw new Exception($"Event '{e.ConditionEventID}' does not exist");
+            }
         }
 
         [EventReaction(StaticEvent.SubEvent)]
-        public void SubEvent(IEventData e, Transaction tx) {
-            IEventData parent;
+        public async Task SubEvent(IEvent e) {
+            IEvent parent = await Storage.GetEvent(e.BaseEventID);
 
-            if (!State.TryGetEvent(e.BaseEventID, out parent)) {
+            if (null == parent) {
                 throw new Exception($"Event '{e.BaseEventID}' does not exist");
-            }
-
-            if (e.BaseEventID == StaticEvent.AttributeProperty) {
-                tx.AddAttrProperty(e.ID, e.Value);
             }
         }
 
         [EventReaction(StaticEvent.AttributeProperty)]
-        public void AttributeProperty(IEventData e, Transaction tx) {
-            IEventData parent;
-            IEventData propertyDef;
-            int propertyDefID;
-
-            if (!State.TryGetEvent(e.BaseEventID, out parent)) {
+        public async Task AttributeProperty(IEvent e) {
+            IEvent parent = await Storage.GetEvent(e.BaseEventID);
+            if (null == parent) {
                 throw new Exception($"Base event {e.BaseEventID} does not exist");
             }
 
+            int propertyDefID;
             if (!Int32.TryParse(e.Value, out propertyDefID)) {
                 throw new Exception($"Expected ID: '{e.Value}'");
             }
 
-            if (!State.TryGetEvent(propertyDefID, out propertyDef)) {
+            IEvent propertyDef = await Storage.GetEvent(propertyDefID);
+            if (null == propertyDef) {
                 throw new Exception($"Property definition {propertyDefID} does not exist");
             }
 
-            if (parent.ValueID == StaticEvent.Model && parent.BaseEventID == StaticEvent.Attribute) {
-                tx.AddAttrProperty(propertyDef.ID, propertyDef.Value);
+            if (parent.ValueID == StaticEvent.Model || parent.BaseEventID == StaticEvent.Attribute) {
+                #warning FIXME
             }
             else if (parent.BaseEventID == StaticEvent.Attribute) {
-                IAttr attr;
-                IIndividual valueIndividual;
-
-                if (!State.TryGetValue(e.BaseEventID, out attr)) {
+                IAttr attr = await Storage.GetAttribute(e.BaseEventID);
+                if (null == attr) {
                     throw new Exception("Attribute " + e.BaseEventID + " does not exist");
                 }
 
-                if (!State.TryGetValue(propertyDefID, out valueIndividual)) {
+                IIndividual valueIndividual = await Storage.GetIndividual(propertyDefID);
+                if (null == valueIndividual) {
                     throw new Exception("Attribute value " + propertyDefID + " does not exist");
                 }
-
-                tx.SetAttrProperty(attr.ID, e.ValueID, valueIndividual.ID);
-
             }
             else {
                 throw new Exception("Illegal operation");
@@ -67,11 +66,9 @@ namespace Aurora.Controllers {
         }
 
         [EventReaction(StaticEvent.Model)]
-        public void Model(IEventData e, Transaction tx) {
-            IModel parentModel = null;
-            IEventData parent;
-
-            if (!State.TryGetEvent(e.ConditionEventID, out parent)) {
+        public async Task Model(IEvent e) {
+            var parent = await Storage.GetEvent(e.ConditionEventID);
+            if (null == parent) {
                 throw new Exception($"Event '{e.ConditionEventID}' does not exist");
             }
 
@@ -79,53 +76,47 @@ namespace Aurora.Controllers {
                 throw new Exception("Model base can only be another model");
             }
 
-            if (e.ConditionEventID != StaticEvent.Event && !State.TryGetValue(e.ConditionEventID, out parentModel)) {
+            var parentModel = await Storage.GetModel(parent.ID);
+            if (e.ConditionEventID != StaticEvent.Event && null == parentModel) {
                 throw new Exception("Model " + e.ConditionEventID + " does not exist");
             }
-
-            tx.AddModel(e, parentModel);
         }
 
         [EventReaction(StaticEvent.Attribute)]
-        public void Attribute(IEventData e, Transaction tx) {
-            IEventData baseEvent;
+        public async Task Attribute(IEvent e) {
+            IEvent baseEvent = await Storage.GetEvent(e.BaseEventID);
 
-            if (!State.TryGetEvent(e.BaseEventID, out baseEvent)) {
+            if (null == baseEvent) {
                 throw new Exception($"Event '{e.BaseEventID}' does not exist");
             }
 
             if (baseEvent.ValueID == StaticEvent.Model) {
                 int attrID;
-                IAttr attr;
-                IModel model;
 
                 if (!Int32.TryParse(e.Value, out attrID)) {
                     throw new Exception("Invalid attribute ID: " + e.Value);
                 }
 
-                if (!State.TryGetValue(attrID, out attr)) {
+                var attr = await Storage.GetAttribute(attrID);
+                if (null == attr) {
                     throw new Exception("Attribute " + attrID + " does not exist");
                 }
 
-                if (!State.TryGetValue(e.BaseEventID, out model)) {
+                var model = await Storage.GetModel(e.BaseEventID);
+                if (null == model) {
                     throw new Exception("Model " + e.BaseEventID + " does not exist");
                 }
-
-                tx.AddModelAttribute(model.ID, attr);
             }
             else if (baseEvent.ValueID == StaticEvent.Individual) {
-                IIndividual individual;
-                IEventData attribute;
-
-                if (!State.TryGetValue(baseEvent.ID, out individual)) {
+                var individual = await Storage.GetIndividual(baseEvent.ID);
+                if (null == individual) {
                     throw new Exception("Individual " + baseEvent.ID + " does not exist");
                 }
 
-                if (!State.TryGetEvent(e.ValueID, out attribute)) {
+                var attribute = await Storage.GetAttribute(e.ValueID);
+                if (null == attribute) {
                     throw new Exception($"Event '{e.ValueID}' does not exist");
                 }
-
-                tx.AddIndividualAttribute(individual.ID, e.ValueID, e.Value);
             }
             else {
                 throw new Exception("Attribute can be added only to a model or an individual");
@@ -133,50 +124,39 @@ namespace Aurora.Controllers {
         }
 
         [EventReaction(StaticEvent.Individual)]
-        public void Individual(IEventData e, Transaction tx) {
-            IEventData parentEvent;
-            IModel model;
-
-            if (!State.TryGetEvent(e.BaseEventID, out parentEvent)) {
+        public async Task Individual(IEvent e) {
+            var parentEvent = await Storage.GetEvent(e.BaseEventID);
+            if (null == parentEvent) {
                 throw new Exception($"Event '{e.BaseEventID}' does not exist");
             }
 
-            if (!State.TryGetValue(e.ConditionEventID, out model)) {
+            var model = await Storage.GetModel(e.ConditionEventID);
+            if (null == model) {
                 throw new Exception("Model " + e.ConditionEventID + " does not exist");
             }
 
             if (e.BaseEventID == StaticEvent.DataType) {
-                tx.ActivateType(e.ID, e.Value);
-            }
-
-            if (State.PropertyRegistered(e.BaseEventID)) {
-                tx.AddAttrPropertyValue(e.BaseEventID, e.ID, e.Value);
-                tx.AddIndividual(e, model);
-            }
-            else if (e.BaseEventID == StaticEvent.Attribute) {
-                tx.AddAttr(e);
-            }
-            else {
-                tx.AddIndividual(e, model);
+#warning FIXME
+                // tx.ActivateType(e.ID, e.Value);
             }
         }
 
         [EventReaction(StaticEvent.DataType)]
-        public void DataType(IEventData e, Transaction tx) {
+        public async Task DataType(IEvent e) {
             int typeID;
-            IIndividual typeValue;
-
             if (!Int32.TryParse(e.Value, out typeID)) {
                 throw new Exception("Invalid DataType: " + e.Value);
             }
 
-            if (!State.TryGetValue(typeID, out typeValue)) {
+            var typeValue = await Storage.GetIndividual(typeID);
+            if (null == typeValue) {
                 throw new Exception("DataType '" + e.Value + "' is not registered");
             }
 
-            if (!State.Types.IsActive(typeValue.Value)) {
-                throw new Exception("Type '" + typeValue.Value + "' is not active");
-            }
+#warning FIXME
+            // if (!State.Types.IsActive(typeValue.Value)) {
+            // throw new Exception("Type '" + typeValue.Value + "' is not active");
+            // }
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Aurora.Controllers;
 using Aurora.DataTypes;
 using AuroraCore.Storage;
@@ -6,7 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
 namespace Aurora {
-    public class EventData : IEventData {
+    public class EventData : IEvent {
         public int ID { get; set; }
         public int BaseEventID { get; set; }
         public int ValueID { get; set; }
@@ -17,13 +18,18 @@ namespace Aurora {
     }
 
     class Program {
-        public static void Main(string[] args) {
+        public static async Task Main(string[] args) {
             Engine.Instance.AddController<EventController>();
-            Engine.Instance.AddType<BasicType>("basic_type");
 
             foreach (var e in Tables.Table) {
-                Engine.Instance.ProcessEvent(e);
+                await Engine.Instance.ProcessEvent(e);
             }
+
+            await Engine.Instance.ProcessEvent(new EventData {
+                ID = 1488,
+                BaseEventID = 100,
+                ConditionEventID = 1
+            });
 
             CreateHostBuilder(args).Build().Run();
         }
