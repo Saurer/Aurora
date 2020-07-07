@@ -1,10 +1,8 @@
 using System;
 using System.Threading.Tasks;
-using AuroraCore;
-using AuroraCore.Controllers;
 using AuroraCore.Storage;
 
-namespace Aurora.Controllers {
+namespace AuroraCore.Controllers {
     public class EventController : Controller {
         [EventReaction(StaticEvent.Event)]
         public async Task Event(IEvent e) {
@@ -47,7 +45,7 @@ namespace Aurora.Controllers {
             }
 
             if (parent.ValueID == StaticEvent.Model || parent.BaseEventID == StaticEvent.Attribute) {
-                #warning FIXME
+#warning FIXME
             }
             else if (parent.BaseEventID == StaticEvent.Attribute) {
                 IAttr attr = await Storage.GetAttribute(e.BaseEventID);

@@ -18,6 +18,7 @@ namespace AuroraCore {
 
         public EngineBase(IStorageAdapter storageAdapter) {
             storage = storageAdapter;
+            AddController<EventController>();
         }
 
         public void AddReaction(int eventID, Action<IEvent> reaction) {

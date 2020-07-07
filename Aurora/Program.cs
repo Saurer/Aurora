@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Aurora.Controllers;
-using Aurora.DataTypes;
 using AuroraCore.Storage;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
@@ -19,8 +17,6 @@ namespace Aurora {
 
     class Program {
         public static async Task Main(string[] args) {
-            Engine.Instance.AddController<EventController>();
-
             foreach (var e in Tables.Table) {
                 await Engine.Instance.ProcessEvent(e);
             }

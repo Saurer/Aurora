@@ -10,7 +10,12 @@ namespace AuroraCore.Types {
         private Dictionary<string, DataType> registry = new Dictionary<string, DataType>();
         private Dictionary<int, DataType> dataTypesID = new Dictionary<int, DataType>();
 
-        public void Register<T>(T type) where T : DataType {
+        public TypeManager() {
+            Register<BasicType>();
+        }
+
+        public void Register<T>() where T : DataType, new() {
+            var type = new T();
             registry.Add(type.Name, type);
         }
 
