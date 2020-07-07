@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AuroraCore.Storage {
     public interface IAttrProperty : IEvent {
-        Task<IReadOnlyDictionary<int, string>> GetValues();
+        Task<IEnumerable<IIndividual>> GetValues();
         Task<bool> ContainsValue(int id);
     }
 
@@ -12,14 +13,13 @@ namespace AuroraCore.Storage {
 
         }
 
-        public Task<bool> ContainsValue(int id) {
-#warning TODO: Implementation
-            throw new System.NotImplementedException();
+        public async Task<bool> ContainsValue(int id) {
+            var values = await GetValues();
+            return values.Any(v => v.ID == id);
         }
 
-        public Task<IReadOnlyDictionary<int, string>> GetValues() {
-#warning TODO: Implementation
-            throw new System.NotImplementedException();
+        public Task<IEnumerable<IIndividual>> GetValues() {
+            return Context.Storage.GetAttrPropertyValues(ID);
         }
     }
 }

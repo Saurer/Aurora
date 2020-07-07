@@ -92,7 +92,9 @@ namespace AuroraCore.Storage.Implementation {
 
             var propertyDef = (
                 from e in events
-                where e.Value.ValueID == StaticEvent.AttributeProperty && e.Value.Value == propertyID.ToString()
+                where
+                    e.Value.BaseEventID == StaticEvent.AttributeProperty &&
+                    e.Value.ValueID == StaticEvent.SubEvent
                 select e.Value
             ).SingleOrDefault();
 
@@ -121,7 +123,7 @@ namespace AuroraCore.Storage.Implementation {
             return result;
         }
 
-        public async Task<IAttrPropertyValue> GetAttrPropertyValue(int attrID, int propertyID) {
+        public async Task<IAttrPropertyMember> GetAttrPropertyMember(int attrID, int propertyID) {
             var attrProto = await GetAttribute(attrID);
 
             if (null == attrProto) {
@@ -142,11 +144,11 @@ namespace AuroraCore.Storage.Implementation {
             return new AttrPropertyValue(context, property);
         }
 
-        public async Task<IEnumerable<IAttrPropertyValue>> GetAttrPropertyValues(int attrID) {
+        public async Task<IEnumerable<IAttrPropertyMember>> GetAttrPropertyMembers(int attrID) {
             var attrProto = await GetAttribute(attrID);
 
             if (null == attrProto) {
-                return Array.Empty<IAttrPropertyValue>();
+                return Array.Empty<IAttrPropertyMember>();
             }
 
             var properties =
@@ -156,6 +158,21 @@ namespace AuroraCore.Storage.Implementation {
                 select prop.Value;
 
             return properties.Select(p => new AttrPropertyValue(context, p));
+        }
+
+        public async Task<IEnumerable<IIndividual>> GetAttrPropertyValues(int propertyID) {
+            var propProto = await GetAttrProperty(propertyID);
+
+            if (null == propProto) {
+                return Array.Empty<IIndividual>();
+            }
+
+            var individualIDs =
+                from e in events
+                where e.Value.BaseEventID == propertyID && e.Value.ValueID == StaticEvent.Individual
+                select e.Key;
+
+            return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
         }
 
         public async Task<IModel> GetModel(int id) {
@@ -236,6 +253,10 @@ namespace AuroraCore.Storage.Implementation {
             }
 
             return false;
+        }
+
+        public DataType GetDataType(string name) {
+            return context.Types.Get(name);
         }
     }
 }

@@ -6,8 +6,8 @@ using AuroraCore.Types;
 namespace AuroraCore.Storage {
     public interface IAttr : IEvent {
         Task<DataType> GetDataType();
-        Task<IAttrPropertyValue> GetProperty(int id);
-        Task<IEnumerable<IAttrPropertyValue>> GetProperties();
+        Task<IAttrPropertyMember> GetProperty(int id);
+        Task<IEnumerable<IAttrPropertyMember>> GetProperties();
         Task<IAttrModel> GetAttrModel();
         Task<bool> Validate(string value);
     }
@@ -17,7 +17,7 @@ namespace AuroraCore.Storage {
         }
 
         public async Task<DataType> GetDataType() {
-            var prop = await Context.Storage.GetAttrPropertyValue(ID, StaticEvent.DataType);
+            var prop = await Context.Storage.GetAttrPropertyMember(ID, StaticEvent.DataType);
             int valueID;
 
             if (null == prop) {
@@ -41,12 +41,12 @@ namespace AuroraCore.Storage {
             return Context.Storage.GetAttrModel();
         }
 
-        public Task<IEnumerable<IAttrPropertyValue>> GetProperties() {
-            return Context.Storage.GetAttrPropertyValues(ID);
+        public Task<IEnumerable<IAttrPropertyMember>> GetProperties() {
+            return Context.Storage.GetAttrPropertyMembers(ID);
         }
 
-        public Task<IAttrPropertyValue> GetProperty(int id) {
-            return Context.Storage.GetAttrPropertyValue(ID, id);
+        public Task<IAttrPropertyMember> GetProperty(int id) {
+            return Context.Storage.GetAttrPropertyMember(ID, id);
         }
 
         public async Task<bool> Validate(string value) {

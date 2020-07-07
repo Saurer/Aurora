@@ -2,12 +2,12 @@ using System;
 using System.Threading.Tasks;
 
 namespace AuroraCore.Storage {
-    public interface IAttrPropertyValue : IEvent {
+    public interface IAttrPropertyMember : IEvent {
         Task<IAttr> GetAttr();
         Task<IIndividual> GetValue();
     }
 
-    internal sealed class AttrPropertyValue : Event, IAttrPropertyValue {
+    internal sealed class AttrPropertyValue : Event, IAttrPropertyMember {
         private int valueID;
 
         public AttrPropertyValue(IDataContext context, IEvent e) : base(context, e) {
