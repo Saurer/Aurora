@@ -59,7 +59,7 @@ namespace AuroraCore.Storage.Implementation {
         public async Task<IEnumerable<IAttr>> GetModelAttributes(int modelID) {
             var attrIDs =
                 from e in events
-                where e.Value.ValueID == StaticEvent.Attribute
+                where e.Value.ValueID == StaticEvent.Attribute && e.Value.BaseEventID == modelID
                 select Int32.Parse(e.Value.Value);
 
             var attributes = new List<IAttr>();
@@ -169,6 +169,15 @@ namespace AuroraCore.Storage.Implementation {
             return new Model(context, modelDef);
         }
 
+        public async Task<IEnumerable<IModel>> GetModels() {
+            var modelIDs =
+                from e in events
+                where e.Value.ValueID == StaticEvent.Model
+                select e.Key;
+
+            return await Task.WhenAll(modelIDs.Select(id => GetModel(id)));
+        }
+
         public async Task<IIndividual> GetIndividual(int id) {
             await Task.Yield();
             var individualDef = await GetEvent(id);
@@ -178,6 +187,15 @@ namespace AuroraCore.Storage.Implementation {
             }
 
             return new Individual(context, individualDef);
+        }
+
+        public async Task<IEnumerable<IIndividual>> GetIndividuals() {
+            var individualIDs =
+                from e in events
+                where e.Value.ValueID == StaticEvent.Individual
+                select e.Key;
+
+            return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
         }
 
         public async Task<IReadOnlyDictionary<int, string>> GetIndividualAttributes(int id) {
