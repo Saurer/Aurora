@@ -7,12 +7,22 @@ namespace AuroraCore.Controllers {
         [EventReaction(StaticEvent.Event)]
         public async Task Event(IEvent e) {
             var existingEvent = await Storage.GetEvent(e.ID);
-            var conditionEvent = await Storage.GetEvent(e.ConditionEventID);
-
             if (null != existingEvent) {
                 throw new Exception($"Event '{e.ID}' already exists");
             }
 
+            var genesisEvent = await Storage.GetEvent(StaticEvent.Event);
+            var baseEvent = await Storage.GetEvent(e.BaseEventID);
+            if (null != genesisEvent && null == baseEvent) {
+                throw new Exception($"Event '{e.BaseEventID}' does not exist");
+            }
+
+            var valueEvent = await Storage.GetEvent(e.ValueID);
+            if (null == valueEvent && null != genesisEvent) {
+                throw new Exception($"Event '{e.ValueID}' does not exist");
+            }
+
+            var conditionEvent = await Storage.GetEvent(e.ConditionEventID);
             if (0 != e.ID && null == conditionEvent) {
                 throw new Exception($"Event '{e.ConditionEventID}' does not exist");
             }
@@ -44,18 +54,26 @@ namespace AuroraCore.Controllers {
                 throw new Exception($"Property definition {propertyDefID} does not exist");
             }
 
-            if (parent.ValueID == StaticEvent.Model || parent.BaseEventID == StaticEvent.Attribute) {
-#warning FIXME
+            if (parent.ValueID == StaticEvent.Model) {
+                if (parent.BaseEventID != StaticEvent.Attribute) {
+                    throw new Exception($"Only attributes can have properties");
+                }
             }
             else if (parent.BaseEventID == StaticEvent.Attribute) {
-                IAttr attr = await Storage.GetAttribute(e.BaseEventID);
+                var attr = await Storage.GetAttribute(e.BaseEventID);
                 if (null == attr) {
                     throw new Exception("Attribute " + e.BaseEventID + " does not exist");
                 }
 
-                IIndividual valueIndividual = await Storage.GetIndividual(propertyDefID);
-                if (null == valueIndividual) {
-                    throw new Exception("Attribute value " + propertyDefID + " does not exist");
+                var property = await Storage.GetAttrProperty(e.ValueID);
+
+                if (null == property) {
+                    throw new Exception($"Attribute property '{propertyDefID}' does not exist");
+                }
+
+                var exists = await property.ContainsValue(propertyDefID);
+                if (!exists) {
+                    throw new Exception($"Value '{propertyDefID}' is not assignable to this event");
                 }
             }
             else {
@@ -134,8 +152,10 @@ namespace AuroraCore.Controllers {
             }
 
             if (e.BaseEventID == StaticEvent.DataType) {
-#warning FIXME
-                // tx.ActivateType(e.ID, e.Value);
+                var type = Storage.GetDataType(e.Value);
+                if (null == type) {
+                    throw new Exception($"Type '{e.Value}' does not exist");
+                }
             }
         }
 
@@ -151,10 +171,10 @@ namespace AuroraCore.Controllers {
                 throw new Exception("DataType '" + e.Value + "' is not registered");
             }
 
-#warning FIXME
-            // if (!State.Types.IsActive(typeValue.Value)) {
-            // throw new Exception("Type '" + typeValue.Value + "' is not active");
-            // }
+            var dataType = Storage.GetDataType(typeValue.Value);
+            if (null == dataType) {
+                throw new Exception("Type '" + typeValue.Value + "' is not active");
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using AuroraCore.Types;
 
 namespace AuroraCore.Storage {
     public interface IStorageAdapter {
@@ -11,13 +12,15 @@ namespace AuroraCore.Storage {
         Task<IAttrModel> GetAttrModel();
         Task<IAttrProperty> GetAttrProperty(int propertyID);
         Task<IEnumerable<IAttrProperty>> GetAttrProperties();
-        Task<IAttrPropertyValue> GetAttrPropertyValue(int attrID, int propertyID);
-        Task<IEnumerable<IAttrPropertyValue>> GetAttrPropertyValues(int attrID);
+        Task<IAttrPropertyMember> GetAttrPropertyMember(int attrID, int propertyID);
+        Task<IEnumerable<IAttrPropertyMember>> GetAttrPropertyMembers(int attrID);
+        Task<IEnumerable<IIndividual>> GetAttrPropertyValues(int propertyID);
         Task<IModel> GetModel(int id);
         Task<IEnumerable<IModel>> GetModels();
         Task<IIndividual> GetIndividual(int id);
         Task<IEnumerable<IIndividual>> GetIndividuals();
         Task<IReadOnlyDictionary<int, string>> GetIndividualAttributes(int id);
         Task<bool> IsEventAncestor(int ancestor, int checkValue);
+        DataType GetDataType(string name);
     }
 }

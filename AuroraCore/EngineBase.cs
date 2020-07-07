@@ -33,7 +33,7 @@ namespace AuroraCore {
             var result = new List<Action<IEvent>>();
 
             foreach (var reaction in reactions) {
-#warning TODO: Implement memory cache
+                // TODO: It is possible to cache 
                 var isAncestor = await Storage.IsEventAncestor(reaction.Key, e.ValueID);
                 if (isAncestor) {
                     foreach (var item in reaction.Value) {
