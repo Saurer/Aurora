@@ -3,12 +3,10 @@ using System.Collections.Generic;
 namespace AuroraCore.Types {
     public interface ITypeManager {
         DataType Get(string name);
-        DataType Get(int id);
     }
 
     public class TypeManager : ITypeManager {
         private Dictionary<string, DataType> registry = new Dictionary<string, DataType>();
-        private Dictionary<int, DataType> dataTypesID = new Dictionary<int, DataType>();
 
         public TypeManager() {
             Register<BasicType>();
@@ -26,10 +24,6 @@ namespace AuroraCore.Types {
             else {
                 return null;
             }
-        }
-
-        public DataType Get(int id) {
-            return dataTypesID[id];
         }
     }
 }
