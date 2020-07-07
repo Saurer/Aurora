@@ -21,12 +21,6 @@ namespace Aurora {
                 await Engine.Instance.ProcessEvent(e);
             }
 
-            await Engine.Instance.ProcessEvent(new EventData {
-                ID = 1488,
-                BaseEventID = 100,
-                ConditionEventID = 1
-            });
-
             CreateHostBuilder(args).Build().Run();
         }
 
