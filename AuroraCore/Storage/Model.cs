@@ -58,9 +58,9 @@ namespace AuroraCore.Storage {
                 return false;
             }
 
-            foreach (var item in values) {
-                var attr = await GetAttribute(item.Key);
-                var valid = await attr.Validate(item.Value);
+            foreach (var attr in attributes) {
+                var value = values[attr.ID];
+                var valid = await attr.Validate(value);
 
                 if (!valid) {
                     return false;

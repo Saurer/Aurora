@@ -28,6 +28,11 @@ namespace AuroraCore.Storage.Implementation {
             }
         }
 
+        public async Task<IEnumerable<IEvent>> GetEvents(int offset = 0, int limit = 10) {
+            await Task.Yield();
+            return events.Skip(offset).Take(limit).Select(e => e.Value);
+        }
+
         public async Task<IAttr> GetAttribute(int id) {
             await Task.Yield();
 
@@ -223,7 +228,9 @@ namespace AuroraCore.Storage.Implementation {
                 join subEvent in events
                 on e.Value.ValueID
                 equals subEvent.Key
-                where e.Value.BaseEventID == id && subEvent.Value.ValueID == StaticEvent.Attribute
+                where e.Value.BaseEventID == id &&
+                    subEvent.Value.BaseEventID == StaticEvent.Attribute &&
+                    subEvent.Value.ValueID == StaticEvent.Individual
                 select new {
                     ID = subEvent.Value.ID,
                     Value = e.Value.Value

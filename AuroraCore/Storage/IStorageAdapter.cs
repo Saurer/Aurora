@@ -6,6 +6,7 @@ namespace AuroraCore.Storage {
     public interface IStorageAdapter {
         Task AddEvent(IEvent value);
         Task<IEvent> GetEvent(int id);
+        Task<IEnumerable<IEvent>> GetEvents(int offset = 0, int limit = 10);
         Task<IAttr> GetAttribute(int id);
         Task<IAttr> GetModelAttribute(int modelID, int attrID);
         Task<IEnumerable<IAttr>> GetModelAttributes(int modelID);
