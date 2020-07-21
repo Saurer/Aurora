@@ -23,6 +23,7 @@ namespace AuroraCore.Storage {
         Task<IReadOnlyDictionary<int, string>> GetIndividualAttributes(int id);
         Task<IEnumerable<IIndividual>> GetActors();
         Task<bool> IsEventAncestor(int ancestor, int checkValue);
+        Task<IIndividual> GetDataTypeIndividual(string name);
         DataType GetDataType(string name);
     }
 }

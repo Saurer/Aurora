@@ -272,6 +272,23 @@ namespace AuroraCore.Storage.Implementation {
             return false;
         }
 
+        public async Task<IIndividual> GetDataTypeIndividual(string name) {
+            var ev = (
+                from e in events
+                where e.Value.Value == name &&
+                e.Value.BaseEventID == StaticEvent.DataType &&
+                e.Value.ValueID == StaticEvent.Individual
+                select e
+            ).SingleOrDefault();
+
+            if (null == ev.Value) {
+                return null;
+            }
+            else {
+                return await GetIndividual(ev.Key);
+            }
+        }
+
         public DataType GetDataType(string name) {
             return context.Types.Get(name);
         }

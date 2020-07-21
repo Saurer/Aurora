@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AuroraCore.Types {
     public interface ITypeManager {
@@ -24,6 +25,10 @@ namespace AuroraCore.Types {
             else {
                 return null;
             }
+        }
+
+        public IEnumerable<DataType> GetAll() {
+            return registry.Select(l => l.Value);
         }
     }
 }
