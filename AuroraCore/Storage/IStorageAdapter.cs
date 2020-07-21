@@ -8,6 +8,7 @@ namespace AuroraCore.Storage {
         Task<IEvent> GetEvent(int id);
         Task<IEnumerable<IEvent>> GetEvents(int offset = 0, int limit = 10);
         Task<IAttr> GetAttribute(int id);
+        Task<IEnumerable<IAttr>> GetAttributes();
         Task<IAttr> GetModelAttribute(int modelID, int attrID);
         Task<IEnumerable<IAttr>> GetModelAttributes(int modelID);
         Task<IAttrModel> GetAttrModel();

@@ -45,6 +45,17 @@ namespace AuroraCore.Storage.Implementation {
             return new Attr(context, attrDef);
         }
 
+        public async Task<IEnumerable<IAttr>> GetAttributes() {
+            await Task.Yield();
+
+            var attrEvents =
+                from e in events
+                where e.Value.BaseEventID == StaticEvent.Attribute && e.Value.ValueID == StaticEvent.Individual
+                select e.Value;
+
+            return attrEvents.Select(a => new Attr(context, a));
+        }
+
         public async Task<IAttr> GetModelAttribute(int modelID, int attrID) {
             await Task.Yield();
 
