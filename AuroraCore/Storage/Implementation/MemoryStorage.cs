@@ -244,6 +244,16 @@ namespace AuroraCore.Storage.Implementation {
             return result;
         }
 
+        public async Task<IEnumerable<IIndividual>> GetActors() {
+            var individualIDs =
+                from e in events
+                where e.Value.ValueID == StaticEvent.Individual &&
+                e.Value.BaseEventID == StaticEvent.Actor
+                select e.Key;
+
+            return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
+        }
+
         public async Task<bool> IsEventAncestor(int ancestor, int checkValue) {
             var queue = new Queue<int>(new[] { checkValue });
             while (queue.Count > 0) {
