@@ -21,7 +21,7 @@ namespace Aurora.Models {
             var dataType = await attr.GetDataType();
             var properties =
                 from p in plainProperties
-                select new AttrPropertyData(p.BaseEventID, Int32.Parse(p.Value));
+                select new AttrPropertyData(p.BaseEventID, p.ValueID, Int32.Parse(p.Value));
 
             return new IndividualAttrData {
                 ID = attr.ID,
