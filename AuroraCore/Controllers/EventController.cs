@@ -157,6 +157,16 @@ namespace AuroraCore.Controllers {
                     throw new Exception($"Type '{e.Value}' does not exist");
                 }
             }
+
+            switch (e.BaseEventID) {
+                case StaticEvent.Entity:
+                case StaticEvent.Attribute:
+                case StaticEvent.Actor:
+                case StaticEvent.DataType:
+                    break;
+                default:
+                    throw new Exception($"Invalid individual base event");
+            }
         }
 
         [EventReaction(StaticEvent.DataType)]
