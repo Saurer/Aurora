@@ -1,50 +1,67 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
 using AuroraCore.Controllers;
+using AuroraCore.Networking;
 using AuroraCore.Storage;
-using AuroraCore.Types;
 
 namespace AuroraCore {
     public class EngineBase {
+        private IStorageAdapter storage;
         private List<Controller> controllers = new List<Controller>();
-        private Dictionary<int, List<Action<IEventData>>> reactions = new Dictionary<int, List<Action<IEventData>>>();
+        private Dictionary<int, List<Func<IEvent, Task>>> reactions = new Dictionary<int, List<Func<IEvent, Task>>>();
+        private NetworkManager netMon;
 
-        public TransientState State { get; private set; } = new TransientState();
+        public IStorageAdapter Storage {
+            get {
+                return storage;
+            }
+        }
 
-        public void AddReaction(int eventID, Action<IEventData> reaction) {
+        public int Position { get; private set; } = 0;
+
+        public EngineBase(IStorageAdapter storageAdapter) {
+            storage = storageAdapter;
+            netMon = new NetworkManager(this);
+            AddController<EventController>();
+        }
+
+        public void AddReaction(int eventID, Func<IEvent, Task> reaction) {
             if (!reactions.ContainsKey(eventID)) {
-                reactions[eventID] = new List<Action<IEventData>>();
+                reactions[eventID] = new List<Func<IEvent, Task>>();
             }
 
             reactions[eventID].Add(reaction);
         }
 
-        public IEnumerable<Action<IEventData>> GetReactionsFor(IEventData e) {
-            int execCount = 0;
+        public async Task<IEnumerable<Func<IEvent, Task>>> GetReactionsFor(IEvent e) {
+            var result = new List<Func<IEvent, Task>>();
 
             foreach (var reaction in reactions) {
-                if (State.IsEventAncestor(reaction.Key, e.ValueID)) {
+                // TODO: It is possible to cache 
+                var isAncestor = await Storage.IsEventAncestor(reaction.Key, e.ValueID);
+                if (isAncestor) {
                     foreach (var item in reaction.Value) {
-                        execCount++;
-                        yield return item;
+                        result.Add(item);
                     }
                 }
             }
 
-            if (0 == execCount) {
+            if (0 == result.Count) {
                 throw new Exception("No reactions defined for " + e.ID);
             }
 
-            yield break;
+            return result;
         }
 
         public void AddController<T>() where T : Controller, new() {
-            Controller controller = Controller.Instantiate<T>(State);
+            Controller controller = Controller.Instantiate<T>(Storage);
             IEnumerable<ReactionBase> reactions = controller.GetReactions();
 
             foreach (var reaction in reactions) {
-                AddReaction(reaction.EventID, e => {
-                    reaction.Method.Invoke(controller, new[] {
+                AddReaction(reaction.EventID, async (e) => {
+                    await (Task)reaction.Method.Invoke(controller, new[] {
                         e
                     });
                 });
@@ -52,14 +69,38 @@ namespace AuroraCore {
             controllers.Add(controller);
         }
 
-        public void AddType<T>(string name) where T : DataType {
-            State.Types.Register<T>(name);
+        public void AddNetworkAdapter(INetworkAdapter adapter) {
+            netMon.AddNetworkAdapter(adapter);
         }
 
-        public void ProcessEvent(IEventData e) {
-            foreach (var handler in GetReactionsFor(e)) {
-                handler(e);
+        public async Task ProcessEvent(IEvent e) {
+            if (netMon.State == NetworkState.Sync) {
+                throw new Exception("Engine is syncing");
             }
+
+            var reactions = await GetReactionsFor(e);
+            foreach (var handler in reactions) {
+                await handler(e);
+            }
+
+#warning TODO: Catch exceptions
+            await Storage.AddEvent(e);
+            Position++;
+        }
+
+        public async Task ProcessNetworkEvent(EventPacket packet) {
+            var reactions = await GetReactionsFor(packet.Value);
+            foreach (var handler in reactions) {
+                await handler(packet.Value);
+            }
+
+#warning TODO: Catch exceptions
+            await Storage.AddEvent(packet.Value);
+            Position++;
+        }
+
+        public async Task Connect<T>(IPEndPoint endpoint) where T : INetworkAdapter {
+            await netMon.Connect<T>(endpoint);
         }
     }
 }

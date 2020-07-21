@@ -1,41 +1,29 @@
-using System;
 using System.Collections.Generic;
 
 namespace AuroraCore.Types {
-    public class TypeManager {
-        private Dictionary<string, Type> registry = new Dictionary<string, Type>();
-        private Dictionary<string, DataType> dataTypes = new Dictionary<string, DataType>();
+    public interface ITypeManager {
+        DataType Get(string name);
+    }
 
-        public void Register<T>(string name) where T : DataType {
-            registry.Add(name, typeof(T));
+    public class TypeManager : ITypeManager {
+        private Dictionary<string, DataType> registry = new Dictionary<string, DataType>();
+
+        public TypeManager() {
+            Register<BasicType>();
         }
 
-        public void Activate(string name) {
-            if (registry.TryGetValue(name, out var dataType)) {
-                if (dataTypes.ContainsKey(name)) {
-                    throw new Exception("Type '" + name + "' is already activated");
-                }
-                else {
-                    var instance = (DataType)Activator.CreateInstance(dataType);
-                    instance.Name = name;
-                    dataTypes.Add(name, instance);
-                }
-            }
-            else {
-                throw new Exception("Type '" + name + "' is not registered");
-            }
+        public void Register<T>() where T : DataType, new() {
+            var type = new T();
+            registry.Add(type.Name, type);
         }
 
         public DataType Get(string name) {
-            return dataTypes[name];
-        }
-
-        public bool IsActive(string name) {
-            return dataTypes.ContainsKey(name);
-        }
-
-        public bool IsRegistered(string name) {
-            return registry.ContainsKey(name);
+            if (registry.TryGetValue(name, out var value)) {
+                return value;
+            }
+            else {
+                return null;
+            }
         }
     }
 }

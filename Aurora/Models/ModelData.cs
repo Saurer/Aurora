@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Collections.Generic;
-using AuroraCore.Events;
+using AuroraCore.Storage;
+using System.Threading.Tasks;
 
 namespace Aurora.Models {
     public class ModelData {
@@ -9,11 +10,19 @@ namespace Aurora.Models {
         public int Parent { get; private set; }
         public IEnumerable<AttrData> Attributes { get; private set; }
 
-        public ModelData(Model model) {
-            ID = model.ID;
-            Name = model.Name;
-            Parent = model.Parent?.ID ?? 0;
-            Attributes = from a in model.GetAttributes() select new AttrData(a);
+        private ModelData() { }
+
+        public static async Task<ModelData> Instantiate(IModel model) {
+            var parent = await model.GetParent();
+            var plainAttributes = await model.GetAllAttributes();
+            var attributes = await Task.WhenAll(plainAttributes.Select(attr => AttrData.Instantiate(attr)));
+
+            return new ModelData() {
+                ID = model.ID,
+                Name = model.Value,
+                Parent = parent?.ID ?? 0,
+                Attributes = attributes
+            };
         }
     }
 }

@@ -1,35 +1,42 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Aurora.Models;
+using System.Threading.Tasks;
 
 namespace Aurora.Api {
     [ApiController]
     [Route("[controller]/[action]")]
     public class EventController : ControllerBase {
         [HttpGet]
-        public ActionResult Model(int id) {
-            if (Engine.Instance.State.Models.TryGetValue(id, out var model)) {
-                return Ok(new ModelData(model));
+        public async Task<ActionResult> Model(int id) {
+            var model = await Engine.Instance.Storage.GetModel(id);
+            if (null == model) {
+                return NotFound(ModelState);
             }
-
-            return NotFound(ModelState);
+            else {
+                return Ok(await ModelData.Instantiate(model));
+            }
         }
 
         [HttpGet]
-        public ActionResult Individual(int id) {
-            if (Engine.Instance.State.Individuals.TryGetValue(id, out var individual)) {
-                return Ok(new IndividualData(individual));
+        public async Task<ActionResult> Individual(int id) {
+            var individual = await Engine.Instance.Storage.GetIndividual(id);
+            if (null == individual) {
+                return NotFound(ModelState);
             }
-
-            return NotFound(ModelState);
+            else {
+                return Ok(await IndividualData.Instantiate(individual));
+            }
         }
 
         [HttpGet]
-        public ActionResult Attribute(int id) {
-            if (Engine.Instance.State.Attributes.TryGetValue(id, out var attr)) {
-                return Ok(new AttrData(attr));
+        public async Task<ActionResult> Attribute(int id) {
+            var attribute = await Engine.Instance.Storage.GetAttribute(id);
+            if (null == attribute) {
+                return NotFound(ModelState);
             }
-
-            return NotFound(ModelState);
+            else {
+                return Ok(await AttrData.Instantiate(attribute));
+            }
         }
     }
 }

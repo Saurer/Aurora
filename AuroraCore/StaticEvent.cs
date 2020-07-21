@@ -1,4 +1,4 @@
-namespace Aurora {
+namespace AuroraCore {
     public static class StaticEvent {
         public const int Event = 0;
         public const int SubEvent = 1;
