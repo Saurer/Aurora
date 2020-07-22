@@ -162,6 +162,7 @@ namespace AuroraCore.Controllers {
                 case StaticEvent.Entity:
                 case StaticEvent.Attribute:
                 case StaticEvent.Actor:
+                case StaticEvent.Role:
                 case StaticEvent.DataType:
                     break;
                 default:
