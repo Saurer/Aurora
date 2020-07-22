@@ -265,6 +265,26 @@ namespace AuroraCore.Storage.Implementation {
             return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
         }
 
+        public async Task<IEnumerable<IIndividual>> GetRoles() {
+            var individualIDs =
+                from e in events
+                where e.Value.ValueID == StaticEvent.Individual &&
+                e.Value.BaseEventID == StaticEvent.Role
+                select e.Key;
+
+            return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
+        }
+
+        public async Task<IEnumerable<IIndividual>> GetEntities() {
+            var individualIDs =
+                from e in events
+                where e.Value.ValueID == StaticEvent.Individual &&
+                e.Value.BaseEventID == StaticEvent.Entity
+                select e.Key;
+
+            return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
+        }
+
         public async Task<bool> IsEventAncestor(int ancestor, int checkValue) {
             var queue = new Queue<int>(new[] { checkValue });
             while (queue.Count > 0) {
