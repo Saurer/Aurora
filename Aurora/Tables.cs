@@ -26,6 +26,8 @@ namespace Aurora {
             new EventData{ ID = 20, BaseEventID = 2, ValueID = 7, Value = "Actor_Model", ConditionEventID = 9, ActorEventID = 0 },
             new EventData{ ID = 21, BaseEventID = 2, ValueID = 8, Value = "Actor_Main", ConditionEventID = 20, ActorEventID = 0 },
             new EventData{ ID = 22, BaseEventID = 21, ValueID = 17, Value = "Main Actor", ConditionEventID = 21, ActorEventID = 0 },
+            new EventData{ ID = 23, BaseEventID = 0, ValueID = 1, Value = "Role", ConditionEventID = 0, ActorEventID = 0 },
+            new EventData{ ID = 24, BaseEventID = 23, ValueID = 7, Value = "Model_Role", ConditionEventID = 9, ActorEventID = 0 },
         };
 
         public static IEnumerable<EventData> OldTable = new EventData[]{
