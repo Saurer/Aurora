@@ -16,6 +16,16 @@ namespace Aurora {
         public int ActorEventID { get; set; }
         public string Value { get; set; }
         public DateTime Date { get; set; }
+
+        public EventData(int id, int baseEventID, int valueID, int conditionEventID, int actorEventID, string value) {
+            ID = id;
+            BaseEventID = baseEventID;
+            ValueID = valueID;
+            ConditionEventID = conditionEventID;
+            ActorEventID = actorEventID;
+            Value = value;
+            Date = DateTime.UtcNow;
+        }
     }
 
     class Program {

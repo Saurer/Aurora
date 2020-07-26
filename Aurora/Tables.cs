@@ -1,63 +1,64 @@
 using System.Collections.Generic;
+using AuroraCore;
 
 namespace Aurora {
     public static class Tables {
         public static IEnumerable<EventData> Table = new EventData[]{
-            new EventData{ ID = 0, BaseEventID = 0, ValueID = 0, Value = "Event", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 1, BaseEventID = 0, ValueID = 0, Value = "SubEvent", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 2, BaseEventID = 0, ValueID = 1, Value = "Actor", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 3, BaseEventID = 0, ValueID = 1, Value = "Entity", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 4, BaseEventID = 0, ValueID = 1, Value = "Relation", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 5, BaseEventID = 0, ValueID = 1, Value = "Attribute", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 6, BaseEventID = 0, ValueID = 1, Value = "AttributeProperty", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 7, BaseEventID = 0, ValueID = 1, Value = "Model", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 8, BaseEventID = 0, ValueID = 1, Value = "Individual", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 9, BaseEventID = 0, ValueID = 7, Value = "Model_Event", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 10, BaseEventID = 3, ValueID = 7, Value = "Model_Entity", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 11, BaseEventID = 4, ValueID = 7, Value = "Model_Relation", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 12, BaseEventID = 6, ValueID = 1, Value = "DataType", ConditionEventID = 6, ActorEventID = 0 },
-            new EventData{ ID = 13, BaseEventID = 12, ValueID = 7, Value = "Model_DataType", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 14, BaseEventID = 12, ValueID = 8, Value = "basic_type", ConditionEventID = 13, ActorEventID = 0 },
-            new EventData{ ID = 15, BaseEventID = 5, ValueID = 7, Value = "Model_Attribute", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 16, BaseEventID = 15, ValueID = 6, Value = "12", ConditionEventID = 15, ActorEventID = 0 },
-            new EventData{ ID = 17, BaseEventID = 5, ValueID = 8, Value = "Name", ConditionEventID = 15, ActorEventID = 0 },
-            new EventData{ ID = 18, BaseEventID = 17, ValueID = 12, Value = "14", ConditionEventID = 17, ActorEventID = 0 },
-            new EventData{ ID = 19, BaseEventID = 9, ValueID = 5, Value = "17", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 20, BaseEventID = 2, ValueID = 7, Value = "Actor_Model", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 21, BaseEventID = 2, ValueID = 8, Value = "Actor_Main", ConditionEventID = 20, ActorEventID = 0 },
-            new EventData{ ID = 22, BaseEventID = 21, ValueID = 17, Value = "Main Actor", ConditionEventID = 21, ActorEventID = 0 },
-            new EventData{ ID = 23, BaseEventID = 0, ValueID = 1, Value = "Role", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 24, BaseEventID = 23, ValueID = 7, Value = "Model_Role", ConditionEventID = 9, ActorEventID = 0 },
+            new EventData(StaticEvent.Event, StaticEvent.Event, StaticEvent.Event, StaticEvent.Event, StaticEvent.Event, "Event"),
+            new EventData(StaticEvent.SubEvent, StaticEvent.Event, StaticEvent.Event, StaticEvent.Event, StaticEvent.Event, "SubEvent"),
+
+            SubEvent(StaticEvent.Actor, StaticEvent.Event, "Actor", StaticEvent.Event),
+            SubEvent(StaticEvent.Entity, StaticEvent.Event, "Entity", StaticEvent.Event),
+            SubEvent(StaticEvent.Relation, StaticEvent.Event, "Relation", StaticEvent.Event),
+            SubEvent(StaticEvent.Attribute, StaticEvent.Event, "Attribute", StaticEvent.Event),
+            SubEvent(StaticEvent.AttributeProperty, StaticEvent.Event, "AttributeProperty", StaticEvent.Event),
+            SubEvent(StaticEvent.Model, StaticEvent.Event, "Model", StaticEvent.Event),
+            SubEvent(StaticEvent.Individual, StaticEvent.Event, "Individual", StaticEvent.Event),
+            SubEvent(StaticEvent.Role, StaticEvent.Event, "Role", StaticEvent.Event),
+
+            SubEvent(StaticEvent.DataType, StaticEvent.AttributeProperty, "DataType", StaticEvent.AttributeProperty),
+            SubEvent(StaticEvent.AttributeValue, StaticEvent.AttributeProperty, "AttributeValue", StaticEvent.AttributeProperty),
+
+            Model(StaticEvent.EventModel, StaticEvent.Event, "Model_Event", StaticEvent.Event),
+            Model(StaticEvent.EntityModel, StaticEvent.Entity, "Model_Entity", StaticEvent.EventModel),
+            Model(StaticEvent.RelationModel, StaticEvent.Relation, "Model_Relation", StaticEvent.EventModel),
+            Model(StaticEvent.DataTypeModel, StaticEvent.DataType, "Model_DataType", StaticEvent.EventModel),
+            Model(StaticEvent.AttributeModel, StaticEvent.Attribute, "Model_Attribute", StaticEvent.EventModel),
+            Model(StaticEvent.ActorModel, StaticEvent.Actor, "Model_Actor", StaticEvent.EventModel),
+            Model(StaticEvent.RoleModel, StaticEvent.Role, "Model_Role", StaticEvent.EventModel),
+
+            Individual(14, StaticEvent.DataType, "basic_type", StaticEvent.DataTypeModel),
+            AttributeProperty(16, 14),
+
+            Individual(25, StaticEvent.DataType, "enum_type", StaticEvent.DataTypeModel),
+
+            Individual(17, StaticEvent.Attribute, "Name", StaticEvent.AttributeModel),
+            DataType(18, 17, 14),
+            ModelAttribute(19, StaticEvent.EventModel, 17),
+
+            Individual(21, StaticEvent.Actor, "Actor_Main", StaticEvent.ActorModel),
+            IndividualAttribute(22, 21, 17, "Main Actor"),
         };
 
-        public static IEnumerable<EventData> OldTable = new EventData[]{
-            new EventData{ ID = 0, BaseEventID = 0, ValueID = 0, Value = "Event", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 1, BaseEventID = 0, ValueID = 0, Value = "SubEvent", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 2, BaseEventID = 0, ValueID = 1, Value = "Actor", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 3, BaseEventID = 0, ValueID = 1, Value = "Entity", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 4, BaseEventID = 0, ValueID = 1, Value = "Relation", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 5, BaseEventID = 0, ValueID = 1, Value = "Attribute", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 6, BaseEventID = 0, ValueID = 1, Value = "Model", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 7, BaseEventID = 0, ValueID = 1, Value = "Individual", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 8, BaseEventID = 0, ValueID = 1, Value = "Role", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 9, BaseEventID = 0, ValueID = 6, Value = "Model_Event", ConditionEventID = 0, ActorEventID = 0 },
-            new EventData{ ID = 14, BaseEventID = 3, ValueID = 6, Value = "Model_Entity", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 15, BaseEventID = 4, ValueID = 6, Value = "Model_Relation", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 16, BaseEventID = 5, ValueID = 1, Value = "DataType", ConditionEventID = 5, ActorEventID = 0 },
-            new EventData{ ID = 17, BaseEventID = 16, ValueID = 6, Value = "Model_DataType", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 18, BaseEventID = 16, ValueID = 7, Value = "basic_type", ConditionEventID = 19, ActorEventID = 0 },
-            new EventData{ ID = 19, BaseEventID = 5, ValueID = 6, Value = "Model_Attribute", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 20, BaseEventID = 19, ValueID = 16, Value = "18", ConditionEventID = 19, ActorEventID = 0 },
+        private static EventData SubEvent(int id, int baseEventID, string value, int conditionEventID) =>
+            new EventData(id, baseEventID, StaticEvent.SubEvent, conditionEventID, StaticEvent.Event, value);
 
-            // new EventData{ ID = 21, BaseEventID = 5, ValueID = 1, Value = "Name", ConditionEventID = 5, ActorEventID = 0 },
-            // new EventData{ ID = 22, BaseEventID = 21, ValueID = 6, Value = "Model_Name", ConditionEventID = 19, ActorEventID = 0 },
-            new EventData{ ID = 21, BaseEventID = 5, ValueID = 7, Value = "Name", ConditionEventID = 5, ActorEventID = 0 },
-            new EventData{ ID = 22, BaseEventID = 21, ValueID = 16, Value = "18", ConditionEventID = 21, ActorEventID = 0 },
+        private static EventData Model(int id, int baseEventID, string value, int parentModelID) =>
+            new EventData(id, baseEventID, StaticEvent.Model, parentModelID, StaticEvent.Event, value);
 
-            new EventData{ ID = 23, BaseEventID = 9, ValueID = 21, Value = "", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 24, BaseEventID = 2, ValueID = 6, Value = "Model_Actor", ConditionEventID = 9, ActorEventID = 0 },
-            new EventData{ ID = 25, BaseEventID = 2, ValueID = 7, Value = "Main_Actor", ConditionEventID = 24, ActorEventID = 0 },
-            new EventData{ ID = 26, BaseEventID = 25, ValueID = 21, Value = "Main actor", ConditionEventID = 25, ActorEventID = 0 },
-        };
+        private static EventData Individual(int id, int baseEventID, string name, int modelID) =>
+            new EventData(id, baseEventID, StaticEvent.Individual, modelID, StaticEvent.Event, name);
+
+        private static EventData AttributeProperty(int id, int propertyID) =>
+            new EventData(id, StaticEvent.AttributeModel, StaticEvent.AttributeProperty, StaticEvent.AttributeModel, StaticEvent.Event, propertyID.ToString());
+
+        private static EventData DataType(int id, int attributeID, int dataTypeID) =>
+            new EventData(id, attributeID, StaticEvent.DataType, attributeID, StaticEvent.Event, dataTypeID.ToString());
+
+        private static EventData ModelAttribute(int id, int modelID, int attributeID) =>
+            new EventData(id, modelID, StaticEvent.Attribute, modelID, StaticEvent.Event, attributeID.ToString());
+
+        private static EventData IndividualAttribute(int id, int individualID, int attributeID, string value) =>
+            new EventData(id, individualID, attributeID, individualID, StaticEvent.Event, value);
     }
 }
