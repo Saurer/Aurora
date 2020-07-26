@@ -18,6 +18,7 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IAttrPropertyMember>> GetAttrPropertyMembers(int attrID);
         Task<IEnumerable<IIndividual>> GetAttrPropertyValues(int propertyID);
         Task<IEvent> GetAttrValue(int attrID, int valueID);
+        Task<IEnumerable<IEvent>> GetAttrValues(int attrID);
         Task<IModel> GetModel(int id);
         Task<IEnumerable<IModel>> GetModels();
         Task<IIndividual> GetIndividual(int id);

@@ -192,7 +192,6 @@ namespace AuroraCore.Storage.Implementation {
             return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
         }
 
-
         public async Task<IEvent> GetAttrValue(int attrID, int valueID) {
             await Task.Yield();
 
@@ -205,6 +204,19 @@ namespace AuroraCore.Storage.Implementation {
             ).SingleOrDefault();
 
             return attrValue.Value;
+        }
+
+        public async Task<IEnumerable<IEvent>> GetAttrValues(int attrID) {
+            await Task.Yield();
+
+            var attrValues = (
+                from e in events
+                where e.Value.BaseEventID == attrID &&
+                    e.Value.ValueID == StaticEvent.AttributeValue
+                select e.Value
+            );
+
+            return attrValues;
         }
 
         public async Task<IModel> GetModel(int id) {
