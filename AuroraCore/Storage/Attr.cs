@@ -5,6 +5,7 @@ using AuroraCore.Types;
 
 namespace AuroraCore.Storage {
     public interface IAttr : IEvent {
+        Task<bool> IsBoxed();
         Task<DataType> GetDataType();
         Task<IAttrPropertyMember> GetProperty(int id);
         Task<IEnumerable<IAttrPropertyMember>> GetProperties();
@@ -14,6 +15,11 @@ namespace AuroraCore.Storage {
 
     internal sealed class Attr : Event, IAttr {
         public Attr(IDataContext context, IEvent e) : base(context, e) {
+        }
+
+        public async Task<bool> IsBoxed() {
+            var dt = await GetDataType();
+            return dt.IsBoxed;
         }
 
         public async Task<DataType> GetDataType() {

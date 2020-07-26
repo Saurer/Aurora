@@ -5,6 +5,7 @@ namespace AuroraCore.Types {
     internal class EnumType : DataType {
         private Regex validationPattern = new Regex("^[a-zA-Z_0-9 ]+$");
 
+        public override bool IsBoxed => true;
         public override string Name => "enum_type";
 
         public override bool Validate(string data) {

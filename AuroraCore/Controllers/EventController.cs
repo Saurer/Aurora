@@ -133,6 +133,26 @@ namespace AuroraCore.Controllers {
                 if (null == attribute) {
                     throw new Exception($"Event '{e.ValueID}' does not exist");
                 }
+
+                var boxed = await attribute.IsBoxed();
+                if (boxed) {
+                    if (Int32.TryParse(e.Value, out var valueID)) {
+                        var valueIndividual = await Storage.GetAttrValue(attribute.ID, valueID);
+
+                        if (null == valueIndividual) {
+                            throw new Exception($"Attribute value '{valueID}' is not defined for attribute '{attribute.ID}'");
+                        }
+                    }
+                    else {
+                        throw new Exception($"Invalid attribute value ID: '{e.Value}', expected number");
+                    }
+                }
+                else {
+                    var valid = await attribute.Validate(e.Value);
+                    if (!valid) {
+                        throw new Exception($"Invalid value for attribute '{attribute.Value}'");
+                    }
+                }
             }
             else {
                 throw new Exception("Attribute can be added only to a model or an individual");

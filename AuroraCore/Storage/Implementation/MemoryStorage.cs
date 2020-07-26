@@ -192,6 +192,21 @@ namespace AuroraCore.Storage.Implementation {
             return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
         }
 
+
+        public async Task<IEvent> GetAttrValue(int attrID, int valueID) {
+            await Task.Yield();
+
+            var attrValue = (
+                from e in events
+                where e.Value.BaseEventID == attrID &&
+                    e.Value.ValueID == StaticEvent.AttributeValue &&
+                    e.Value.Value == valueID.ToString()
+                select e
+            ).SingleOrDefault();
+
+            return attrValue.Value;
+        }
+
         public async Task<IModel> GetModel(int id) {
             await Task.Yield();
             var modelDef = await GetEvent(id);
