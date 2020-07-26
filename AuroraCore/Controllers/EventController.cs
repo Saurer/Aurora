@@ -207,5 +207,19 @@ namespace AuroraCore.Controllers {
                 throw new Exception("Type '" + typeValue.Value + "' is not active");
             }
         }
+
+        [EventReaction(StaticEvent.AttributeValue)]
+        public async Task AttributeValue(IEvent e) {
+            var attr = await Storage.GetAttribute(e.BaseEventID);
+
+            if (null == attr) {
+                throw new Exception($"Attribute '{e.BaseEventID}' does not exist");
+            }
+
+            var dt = await attr.GetDataType();
+            if (!dt.AllowsBoxedValue(e.Value)) {
+                throw new Exception($"Invalid value for attribute '{attr.Value}'");
+            }
+        }
     }
 }
