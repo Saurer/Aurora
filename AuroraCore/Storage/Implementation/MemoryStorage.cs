@@ -110,7 +110,8 @@ namespace AuroraCore.Storage.Implementation {
                 from e in events
                 where
                     e.Value.BaseEventID == StaticEvent.AttributeProperty &&
-                    e.Value.ValueID == StaticEvent.SubEvent
+                    e.Value.ValueID == StaticEvent.SubEvent &&
+                    e.Key == propertyID
                 select e.Value
             ).SingleOrDefault();
 
