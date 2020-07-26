@@ -11,6 +11,7 @@ namespace AuroraCore.Types {
 
         public TypeManager() {
             Register<BasicType>();
+            Register<EnumType>();
         }
 
         public void Register<T>() where T : DataType, new() {
