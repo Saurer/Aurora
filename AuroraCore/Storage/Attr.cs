@@ -10,6 +10,8 @@ namespace AuroraCore.Storage {
         Task<IAttrPropertyMember> GetProperty(int id);
         Task<IEnumerable<IAttrPropertyMember>> GetProperties();
         Task<IAttrModel> GetAttrModel();
+        Task<IEvent> GetValue(int valueID);
+        Task<IEnumerable<IEvent>> GetValues();
         Task<bool> Validate(string value);
     }
 
@@ -53,6 +55,14 @@ namespace AuroraCore.Storage {
 
         public Task<IAttrPropertyMember> GetProperty(int id) {
             return Context.Storage.GetAttrPropertyMember(ID, id);
+        }
+
+        public Task<IEvent> GetValue(int valueID) {
+            return Context.Storage.GetAttrValue(ID, valueID);
+        }
+
+        public Task<IEnumerable<IEvent>> GetValues() {
+            return Context.Storage.GetAttrValues(ID);
         }
 
         public async Task<bool> Validate(string value) {
