@@ -199,7 +199,7 @@ namespace AuroraCore.Storage.Implementation {
                 from e in events
                 where e.Value.BaseEventID == attrID &&
                     e.Value.ValueID == StaticEvent.AttributeValue &&
-                    e.Value.Value == valueID.ToString()
+                    e.Key == valueID
                 select e
             ).SingleOrDefault();
 
