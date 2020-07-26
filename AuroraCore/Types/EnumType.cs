@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using AuroraCore.Storage;
 
 namespace AuroraCore.Types {
     internal class EnumType : DataType {
@@ -12,8 +11,8 @@ namespace AuroraCore.Types {
             return validationPattern.IsMatch(data);
         }
 
-        public override bool AllowsBoxedValue(IEvent e) {
-            return Validate(e.Value);
+        public override bool AllowsBoxedValue(string value) {
+            return Validate(value);
         }
     }
 }
