@@ -17,7 +17,7 @@ namespace Aurora {
             SubEvent(StaticEvent.Role, StaticEvent.Event, "Role", StaticEvent.Event),
 
             SubEvent(StaticEvent.DataType, StaticEvent.AttributeProperty, "DataType", StaticEvent.AttributeProperty),
-            SubEvent(StaticEvent.AttributeValue, StaticEvent.AttributeProperty, "AttributeValue", StaticEvent.AttributeProperty),
+            SubEvent(StaticEvent.AttributeValue, StaticEvent.Event, "AttributeValue", StaticEvent.AttributeProperty),
 
             Model(StaticEvent.EventModel, StaticEvent.Event, "Model_Event", StaticEvent.Event),
             Model(StaticEvent.EntityModel, StaticEvent.Entity, "Model_Entity", StaticEvent.EventModel),
