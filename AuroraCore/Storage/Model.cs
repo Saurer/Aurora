@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 namespace AuroraCore.Storage {
     public interface IModel : IEvent {
+        Task<IEvent> GetBaseEvent();
         Task<IModel> GetParent();
         Task<IAttr> GetAttribute(int id);
         Task<IEnumerable<IAttr>> GetOwnAttributes();
@@ -13,6 +14,10 @@ namespace AuroraCore.Storage {
 
     internal class Model : Event, IModel {
         public Model(IDataContext context, IEvent e) : base(context, e) {
+        }
+
+        public async Task<IEvent> GetBaseEvent() {
+            return await Context.Storage.GetEvent(BaseEventID);
         }
 
         public async Task<IAttr> GetAttribute(int attrID) {
