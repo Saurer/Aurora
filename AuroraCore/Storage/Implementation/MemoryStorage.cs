@@ -220,7 +220,6 @@ namespace AuroraCore.Storage.Implementation {
         }
 
         public async Task<IModel> GetModel(int id) {
-            await Task.Yield();
             var modelDef = await GetEvent(id);
 
             if (modelDef.ValueID != StaticEvent.Model) {
@@ -240,7 +239,6 @@ namespace AuroraCore.Storage.Implementation {
         }
 
         public async Task<IIndividual> GetIndividual(int id) {
-            await Task.Yield();
             var individualDef = await GetEvent(id);
 
             if (individualDef.ValueID != StaticEvent.Individual) {
@@ -303,14 +301,43 @@ namespace AuroraCore.Storage.Implementation {
             return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
         }
 
-        public async Task<IEnumerable<IIndividual>> GetEntities() {
-            var individualIDs =
+        public async Task<IEntity> GetEntity(int id) {
+            var entityDef = await GetEvent(id);
+
+            if (entityDef.ValueID != StaticEvent.SubEvent || entityDef.BaseEventID != StaticEvent.Entity) {
+                return null;
+            }
+
+            return new Entity(context, entityDef);
+        }
+
+        public async Task<IEnumerable<IEntity>> GetEntities() {
+            var entityIDs =
                 from e in events
-                where e.Value.ValueID == StaticEvent.Individual &&
+                where e.Value.ValueID == StaticEvent.SubEvent &&
                 e.Value.BaseEventID == StaticEvent.Entity
                 select e.Key;
 
-            return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
+            return await Task.WhenAll(entityIDs.Select(id => GetEntity(id)));
+        }
+
+
+        public async Task<IEnumerable<IModel>> GetEntityModels(int id) {
+            var modelIDs =
+                from e in events
+                where e.Value.BaseEventID == id && e.Value.ValueID == StaticEvent.Model
+                select e.Key;
+
+            return await Task.WhenAll(modelIDs.Select(model => GetModel(model)));
+        }
+
+        public async Task<IEnumerable<IIndividual>> GetEntityIndividuals(int id) {
+            var individualIDs =
+                from e in events
+                where e.Value.BaseEventID == id && e.Value.ValueID == StaticEvent.Individual
+                select e.Key;
+
+            return await Task.WhenAll(individualIDs.Select(individual => GetIndividual(individual)));
         }
 
         public async Task<bool> IsEventAncestor(int ancestor, int checkValue) {

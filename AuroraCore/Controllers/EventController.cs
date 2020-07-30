@@ -179,14 +179,19 @@ namespace AuroraCore.Controllers {
             }
 
             switch (e.BaseEventID) {
-                case StaticEvent.Entity:
                 case StaticEvent.Attribute:
                 case StaticEvent.Actor:
                 case StaticEvent.Role:
                 case StaticEvent.DataType:
                     break;
                 default:
-                    throw new Exception($"Invalid individual base event");
+                    switch (parentEvent.BaseEventID) {
+                        case StaticEvent.Entity:
+                            break;
+                        default:
+                            throw new Exception($"Invalid individual base event");
+                    }
+                    break;
             }
         }
 
