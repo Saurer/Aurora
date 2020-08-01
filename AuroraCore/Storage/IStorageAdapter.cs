@@ -9,8 +9,6 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IEvent>> GetEvents(int offset = 0, int limit = 10);
         Task<IAttr> GetAttribute(int id);
         Task<IEnumerable<IAttr>> GetAttributes();
-        Task<IAttr> GetModelAttribute(int modelID, int attrID);
-        Task<IEnumerable<IAttr>> GetModelAttributes(int modelID);
         Task<IAttrModel> GetAttrModel();
         Task<IAttrProperty> GetAttrProperty(int propertyID);
         Task<IEnumerable<IAttrProperty>> GetAttrProperties();
@@ -21,6 +19,9 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IEvent>> GetAttrValues(int attrID);
         Task<IModel> GetModel(int id);
         Task<IEnumerable<IModel>> GetModels();
+        Task<IModelAttr> GetModelAttribute(int modelID, int attrID);
+        Task<IEnumerable<IModelAttr>> GetModelAttributes(int modelID);
+        Task<IEnumerable<IEvent>> GetModelAttributeValueProperties(int modelID, int attributeID);
         Task<IIndividual> GetIndividual(int id);
         Task<IEnumerable<IIndividual>> GetIndividuals();
         Task<IReadOnlyDictionary<int, string>> GetIndividualAttributes(int id);

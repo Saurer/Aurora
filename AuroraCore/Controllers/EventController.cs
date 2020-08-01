@@ -226,5 +226,33 @@ namespace AuroraCore.Controllers {
                 throw new Exception($"Invalid value for attribute '{attr.Value}'");
             }
         }
+
+        [EventReaction(StaticEvent.ValueProperty)]
+        public async Task ValueProperty(IEvent e) {
+            var baseEvent = await Storage.GetEvent(e.BaseEventID);
+
+            if (StaticEvent.Attribute != baseEvent.ValueID) {
+                throw new Exception($"Invalid base event value: '{e.BaseEventID}'");
+            }
+
+            var model = await Storage.GetModel(baseEvent.BaseEventID);
+            if (null == model) {
+                throw new Exception($"Model '{baseEvent.BaseEventID}' does not exist");
+            }
+
+            var attr = await Storage.GetAttribute(Int32.Parse(baseEvent.Value));
+            if (null == attr) {
+                throw new Exception($"Attribute '{baseEvent.Value}' does not exist");
+            }
+
+            switch (e.ValueID) {
+                case StaticEvent.Required:
+                case StaticEvent.Cardinality:
+                    break;
+
+                default:
+                    throw new Exception($"Unhandled value property type: '{e.ValueID}'");
+            }
+        }
     }
 }

@@ -19,5 +19,10 @@ namespace AuroraCore {
         public const int DataTypeModel = 13;
         public const int Role = 23;
         public const int RoleModel = 24;
+
+        // FIXME: Must me 36,37,38 after relations implementation
+        public const int ValueProperty = 27;
+        public const int Cardinality = 28;
+        public const int Required = 29;
     }
 }

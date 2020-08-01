@@ -6,9 +6,9 @@ namespace AuroraCore.Storage {
     public interface IModel : IEvent {
         Task<IEvent> GetBaseEvent();
         Task<IModel> GetParent();
-        Task<IAttr> GetAttribute(int id);
-        Task<IEnumerable<IAttr>> GetOwnAttributes();
-        Task<IEnumerable<IAttr>> GetAllAttributes();
+        Task<IModelAttr> GetAttribute(int id);
+        Task<IEnumerable<IModelAttr>> GetOwnAttributes();
+        Task<IEnumerable<IModelAttr>> GetAllAttributes();
         Task<bool> Validate(IReadOnlyDictionary<int, string> values);
     }
 
@@ -20,18 +20,18 @@ namespace AuroraCore.Storage {
             return await Context.Storage.GetEvent(BaseEventID);
         }
 
-        public async Task<IAttr> GetAttribute(int attrID) {
+        public async Task<IModelAttr> GetAttribute(int attrID) {
             var attribute = await Context.Storage.GetModelAttribute(ID, attrID);
             return attribute;
         }
 
-        public Task<IEnumerable<IAttr>> GetOwnAttributes() {
+        public Task<IEnumerable<IModelAttr>> GetOwnAttributes() {
             return Context.Storage.GetModelAttributes(ID);
         }
 
-        public async Task<IEnumerable<IAttr>> GetAllAttributes() {
+        public async Task<IEnumerable<IModelAttr>> GetAllAttributes() {
             var queue = new Queue<IModel>(new[] { this });
-            var result = new List<IAttr>();
+            var result = new List<IModelAttr>();
 
             while (queue.Count > 0) {
                 var model = queue.Dequeue();
@@ -59,16 +59,24 @@ namespace AuroraCore.Storage {
         public async Task<bool> Validate(IReadOnlyDictionary<int, string> values) {
             var attributes = await GetAllAttributes();
 
-            if (attributes.Count() != values.Count) {
-                return false;
-            }
+            foreach (var modelAttr in attributes) {
+                var attrProperties = await modelAttr.GetValueProperties();
+                var requiredValue = attrProperties.Where(prop => prop.ValueID == StaticEvent.Required).SingleOrDefault()?.Value;
+                var attr = await modelAttr.GetAttribute();
 
-            foreach (var attr in attributes) {
-                var value = values[attr.ID];
-                var valid = await attr.Validate(value);
+                // Value is not required
+                if (null == requiredValue ? Const.DefaultRequired == 0 : requiredValue == "0") {
+                    continue;
+                }
 
-                if (!valid) {
-                    return false;
+                if (values.TryGetValue(attr.ID, out var value)) {
+                    var valid = await attr.Validate(value);
+                    if (!valid) {
+                        return false;
+                    }
+                }
+                else {
+                    return false;    
                 }
             }
 

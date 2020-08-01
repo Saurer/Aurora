@@ -56,37 +56,6 @@ namespace AuroraCore.Storage.Implementation {
             return attrEvents.Select(a => new Attr(context, a));
         }
 
-        public async Task<IAttr> GetModelAttribute(int modelID, int attrID) {
-            await Task.Yield();
-
-            var attr = (
-                from e in events
-                where e.Value.BaseEventID == modelID && e.Value.ValueID == attrID
-                select e.Value
-            ).SingleOrDefault();
-
-            if (null == attr) {
-                return null;
-            }
-
-            return new Attr(context, attr);
-        }
-
-        public async Task<IEnumerable<IAttr>> GetModelAttributes(int modelID) {
-            var attrIDs =
-                from e in events
-                where e.Value.ValueID == StaticEvent.Attribute && e.Value.BaseEventID == modelID
-                select Int32.Parse(e.Value.Value);
-
-            var attributes = new List<IAttr>();
-            foreach (var attrID in attrIDs) {
-                var attribute = await GetAttribute(attrID);
-                attributes.Add(attribute);
-            }
-
-            return attributes;
-        }
-
         public async Task<IAttrModel> GetAttrModel() {
             await Task.Yield();
 
@@ -236,6 +205,51 @@ namespace AuroraCore.Storage.Implementation {
                 select e.Key;
 
             return await Task.WhenAll(modelIDs.Select(id => GetModel(id)));
+        }
+
+        public async Task<IEnumerable<IEvent>> GetModelAttributeValueProperties(int modelID, int attributeID) {
+            var modelAttr = await GetModelAttribute(modelID, attributeID);
+
+            if (null == modelAttr) {
+                return Array.Empty<IEvent>();
+            }
+
+            var properties =
+                from a in events
+                join parent in events on a.Value.ValueID equals parent.Value.ID
+                where a.Value.BaseEventID == modelAttr.ID && parent.Value.BaseEventID == StaticEvent.ValueProperty
+                select a.Value;
+
+            return properties;
+        }
+
+        public async Task<IModelAttr> GetModelAttribute(int modelID, int attrID) {
+            await Task.Yield();
+
+            var attr = (
+                from e in events
+                where e.Value.BaseEventID == modelID && e.Value.ValueID == StaticEvent.Attribute && e.Value.Value == attrID.ToString()
+                select e.Value
+            ).SingleOrDefault();
+
+            if (null == attr) {
+                return null;
+            }
+
+            return new ModelAttr(context, attr);
+        }
+
+        public async Task<IEnumerable<IModelAttr>> GetModelAttributes(int modelID) {
+            var attrIDs =
+                from e in events
+                where e.Value.ValueID == StaticEvent.Attribute && e.Value.BaseEventID == modelID
+                select Int32.Parse(e.Value.Value);
+
+            var attributes = await Task.WhenAll(
+                attrIDs.Select(id => GetModelAttribute(modelID, id))
+            );
+
+            return attributes;
         }
 
         public async Task<IIndividual> GetIndividual(int id) {

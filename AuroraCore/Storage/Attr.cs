@@ -15,7 +15,7 @@ namespace AuroraCore.Storage {
         Task<bool> Validate(string value);
     }
 
-    internal sealed class Attr : Event, IAttr {
+    internal class Attr : Event, IAttr {
         public Attr(IDataContext context, IEvent e) : base(context, e) {
         }
 
