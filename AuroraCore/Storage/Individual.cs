@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 namespace AuroraCore.Storage {
     public interface IIndividual : IEvent {
         Task<IModel> GetModel();
+        Task<IIndividual> GetActor();
         Task<IReadOnlyDictionary<int, string>> GetAttributes();
     }
 
@@ -12,12 +13,16 @@ namespace AuroraCore.Storage {
 
         }
 
-        public Task<IReadOnlyDictionary<int, string>> GetAttributes() {
-            return Context.Storage.GetIndividualAttributes(ID);
+        public async Task<IReadOnlyDictionary<int, string>> GetAttributes() {
+            return await Context.Storage.GetIndividualAttributes(ID);
         }
 
-        public Task<IModel> GetModel() {
-            return Context.Storage.GetModel(ConditionEventID);
+        public async Task<IIndividual> GetActor() {
+            return await Context.Storage.GetIndividual(ActorEventID);
+        }
+
+        public async Task<IModel> GetModel() {
+            return await Context.Storage.GetModel(ConditionEventID);
         }
     }
 }
