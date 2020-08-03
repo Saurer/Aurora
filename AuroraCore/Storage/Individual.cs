@@ -5,7 +5,8 @@ namespace AuroraCore.Storage {
     public interface IIndividual : IEvent {
         Task<IModel> GetModel();
         Task<IIndividual> GetActor();
-        Task<IReadOnlyDictionary<int, string>> GetAttributes();
+        Task <IEnumerable<string>> GetAttribute(int attrID);
+        Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetAttributes();
     }
 
     internal sealed class Individual : Event, IIndividual {
@@ -13,7 +14,11 @@ namespace AuroraCore.Storage {
 
         }
 
-        public async Task<IReadOnlyDictionary<int, string>> GetAttributes() {
+        public async Task<IEnumerable<string>> GetAttribute(int attributeID) {
+            return await Context.Storage.GetIndividualAttribute(ID, attributeID);
+        }
+
+        public async Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetAttributes() {
             return await Context.Storage.GetIndividualAttributes(ID);
         }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using AuroraCore.Storage;
 
@@ -122,6 +123,11 @@ namespace AuroraCore.Controllers {
                 if (null == model) {
                     throw new Exception("Model " + e.BaseEventID + " does not exist");
                 }
+
+                var existingAttrs = await model.GetAllAttributes();
+                if (existingAttrs.Any(a => a.Value == attrID.ToString())) {
+                    throw new Exception($"Model '{model.ID}' already has attribute '{attrID}'");
+                }
             }
             else if (baseEvent.ValueID == StaticEvent.Individual) {
                 var individual = await Storage.GetIndividual(baseEvent.ID);
@@ -130,6 +136,7 @@ namespace AuroraCore.Controllers {
                 }
 
                 var attribute = await Storage.GetAttribute(e.ValueID);
+
                 if (null == attribute) {
                     throw new Exception($"Event '{e.ValueID}' does not exist");
                 }
@@ -151,6 +158,16 @@ namespace AuroraCore.Controllers {
                     var valid = await attribute.Validate(e.Value);
                     if (!valid) {
                         throw new Exception($"Invalid value for attribute '{attribute.Value}'");
+                    }
+                }
+
+                var cardinality = await Storage.GetModelAttributeValueProperty(individual.ConditionEventID, e.ValueID, StaticEvent.Cardinality);
+                var cardinalityValue = cardinality == null ? Const.DefaultCardinality : Int32.Parse(cardinality.Value);
+
+                if (cardinalityValue != 0) {
+                    var values = await Storage.GetIndividualAttribute(individual.ID, attribute.ID);
+                    if (cardinalityValue <= values.Count()) {
+                        throw new Exception($"Cardinality violation, attribute '{attribute.ID}' already hax maximum number of values");
                     }
                 }
             }
@@ -247,7 +264,15 @@ namespace AuroraCore.Controllers {
 
             switch (e.ValueID) {
                 case StaticEvent.Required:
+                    if (e.Value != "1" && e.Value != "0") {
+                        throw new Exception($"Invalid value property value of type '{e.ValueID}': '{e.Value}'");
+                    }
+                    break;
+
                 case StaticEvent.Cardinality:
+                    if (!Int32.TryParse(e.Value, out var intValue) || intValue < 0) {
+                        throw new Exception($"Invalid value property value of type '{e.ValueID}': '{e.Value}'");
+                    }
                     break;
 
                 default:

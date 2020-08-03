@@ -207,6 +207,24 @@ namespace AuroraCore.Storage.Implementation {
             return await Task.WhenAll(modelIDs.Select(id => GetModel(id)));
         }
 
+
+        public async Task<IEvent> GetModelAttributeValueProperty(int modelID, int attributeID, int valuePropertyID) {
+            var modelAttr = await GetModelAttribute(modelID, attributeID);
+
+            if (null == modelAttr) {
+                return null;
+            }
+
+            var property = (
+                from a in events
+                join parent in events on a.Value.ValueID equals parent.Value.ID
+                where a.Value.BaseEventID == modelAttr.ID && parent.Value.BaseEventID == StaticEvent.ValueProperty && a.Value.ValueID == valuePropertyID
+                select a.Value
+            ).SingleOrDefault();
+
+            return property;
+        }
+
         public async Task<IEnumerable<IEvent>> GetModelAttributeValueProperties(int modelID, int attributeID) {
             var modelAttr = await GetModelAttribute(modelID, attributeID);
 
@@ -271,7 +289,24 @@ namespace AuroraCore.Storage.Implementation {
             return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
         }
 
-        public async Task<IReadOnlyDictionary<int, string>> GetIndividualAttributes(int id) {
+        public async Task<IEnumerable<string>> GetIndividualAttribute(int individualID, int attributeID) {
+            await Task.Yield();
+
+            var values =
+                from e in events
+                join subEvent in events
+                on e.Value.ValueID
+                equals subEvent.Key
+                where e.Value.BaseEventID == individualID &&
+                    subEvent.Value.BaseEventID == StaticEvent.Attribute &&
+                    subEvent.Value.ValueID == StaticEvent.Individual &&
+                    subEvent.Value.ID == attributeID
+                select e.Value.Value;
+
+            return values;
+        }
+
+        public async Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetIndividualAttributes(int id) {
             await Task.Yield();
 
             var attributes =
@@ -287,9 +322,14 @@ namespace AuroraCore.Storage.Implementation {
                     Value = e.Value.Value
                 };
 
-            var result = new Dictionary<int, string>();
+            var result = new Dictionary<int, IEnumerable<string>>();
             foreach (var attribute in attributes) {
-                result.Add(attribute.ID, attribute.Value);
+                if (!result.ContainsKey(attribute.ID)) {
+                    result.Add(attribute.ID, new List<string>());
+                }
+
+                var list = (List<string>)result[attribute.ID];
+                list.Add(attribute.Value);
             }
 
             return result;

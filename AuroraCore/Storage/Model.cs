@@ -9,7 +9,7 @@ namespace AuroraCore.Storage {
         Task<IModelAttr> GetAttribute(int id);
         Task<IEnumerable<IModelAttr>> GetOwnAttributes();
         Task<IEnumerable<IModelAttr>> GetAllAttributes();
-        Task<bool> Validate(IReadOnlyDictionary<int, string> values);
+        Task<bool> Validate(IReadOnlyDictionary<int, IEnumerable<string>> values);
     }
 
     internal class Model : Event, IModel {
@@ -56,7 +56,7 @@ namespace AuroraCore.Storage {
             }
         }
 
-        public async Task<bool> Validate(IReadOnlyDictionary<int, string> values) {
+        public async Task<bool> Validate(IReadOnlyDictionary<int, IEnumerable<string>> values) {
             var attributes = await GetAllAttributes();
 
             foreach (var modelAttr in attributes) {
@@ -69,14 +69,16 @@ namespace AuroraCore.Storage {
                     continue;
                 }
 
-                if (values.TryGetValue(attr.ID, out var value)) {
-                    var valid = await attr.Validate(value);
-                    if (!valid) {
-                        return false;
+                if (values.TryGetValue(attr.ID, out var valuesCollection)) {
+                    foreach (var value in valuesCollection) {
+                        var valid = await attr.Validate(value);
+                        if (!valid) {
+                            return false;
+                        }
                     }
                 }
                 else {
-                    return false;    
+                    return false;
                 }
             }
 

@@ -19,7 +19,7 @@ namespace AuroraCore.Storage {
             return Context.Storage.GetAttrProperty(id);
         }
 
-        public new async Task<bool> Validate(IReadOnlyDictionary<int, string> values) {
+        public new async Task<bool> Validate(IReadOnlyDictionary<int, IEnumerable<string>> values) {
             var modelValid = await base.Validate(values);
 
             if (!modelValid) {

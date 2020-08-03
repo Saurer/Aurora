@@ -21,10 +21,12 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IModel>> GetModels();
         Task<IModelAttr> GetModelAttribute(int modelID, int attrID);
         Task<IEnumerable<IModelAttr>> GetModelAttributes(int modelID);
+        Task<IEvent> GetModelAttributeValueProperty(int modelID, int attributeID, int valuePropertyID);
         Task<IEnumerable<IEvent>> GetModelAttributeValueProperties(int modelID, int attributeID);
         Task<IIndividual> GetIndividual(int id);
         Task<IEnumerable<IIndividual>> GetIndividuals();
-        Task<IReadOnlyDictionary<int, string>> GetIndividualAttributes(int id);
+        Task<IEnumerable<string>> GetIndividualAttribute(int individualID, int attributeID);
+        Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetIndividualAttributes(int id);
         Task<IEnumerable<IIndividual>> GetActors();
         Task<IEnumerable<IIndividual>> GetRoles();
         Task<IEntity> GetEntity(int entityID);
