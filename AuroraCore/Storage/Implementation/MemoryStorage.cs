@@ -364,6 +364,54 @@ namespace AuroraCore.Storage.Implementation {
             return result;
         }
 
+        public async Task<IEnumerable<string>> GetIndividualRelation(int individualID, int relationID) {
+            await Task.Yield();
+
+            var values =
+                from e in events
+                join subEvent in events
+                on e.Value.ValueID
+                equals subEvent.Key
+                where e.Value.BaseEventID == individualID &&
+                    subEvent.Value.BaseEventID == StaticEvent.Relation &&
+                    subEvent.Value.ValueID == StaticEvent.Individual &&
+                    subEvent.Value.ID == relationID
+                select e.Value.Value;
+
+            return values;
+        }
+
+        public async Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetIndividualRelations(int id) {
+            await Task.Yield();
+
+            var relations =
+                from e in events
+                join subEvent in events
+                on e.Value.ValueID
+                equals subEvent.Key
+                where e.Value.BaseEventID == id &&
+                    subEvent.Value.BaseEventID == StaticEvent.Relation &&
+                    subEvent.Value.ValueID == StaticEvent.Individual
+                select new {
+                    ID = subEvent.Value.ID,
+                    Value = e.Value.Value
+                };
+
+            var result = new Dictionary<int, IEnumerable<string>>();
+            foreach (var relation in relations) {
+                if (!result.ContainsKey(relation.ID)) {
+                    result.Add(relation.ID, new List<string>());
+                }
+
+                var list = (List<string>)result[relation.ID];
+                list.Add(relation.Value);
+            }
+
+            return result;
+        }
+
+
+
         public async Task<IEnumerable<IIndividual>> GetActors() {
             var individualIDs =
                 from e in events
@@ -442,6 +490,18 @@ namespace AuroraCore.Storage.Implementation {
                 select e.Key;
 
             return await Task.WhenAll(relationIDs.Select(id => GetRelation(id)));
+        }
+
+        public async Task<IEnumerable<IIndividual>> GetRelationCandidates() {
+            var individualIDs =
+                from e in events
+                join parent in events on e.Value.BaseEventID equals parent.Key
+                where
+                    e.Value.ValueID == StaticEvent.Individual &&
+                    (parent.Value.BaseEventID == StaticEvent.Entity || e.Value.BaseEventID == StaticEvent.Actor)
+                select e.Key;
+
+            return await Task.WhenAll(individualIDs.Select(id => GetIndividual(id)));
         }
 
         public async Task<bool> IsEventAncestor(int ancestor, int checkValue) {

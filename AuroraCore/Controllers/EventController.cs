@@ -311,47 +311,37 @@ namespace AuroraCore.Controllers {
                 }
             }
             else if (baseEvent.ValueID == StaticEvent.Individual) {
-                throw new NotImplementedException();
-                // var individual = await Storage.GetIndividual(baseEvent.ID);
-                // if (null == individual) {
-                //     throw new Exception("Individual " + baseEvent.ID + " does not exist");
-                // }
+                var individual = await Storage.GetIndividual(baseEvent.ID);
+                if (null == individual) {
+                    throw new Exception("Individual " + baseEvent.ID + " does not exist");
+                }
 
-                // var relation = await Storage.GetRelation(e.ValueID);
+                var relation = await Storage.GetRelation(e.ValueID);
 
-                // if (null == relation) {
-                //     throw new Exception($"Event '{e.ValueID}' does not exist");
-                // }
+                if (null == relation) {
+                    throw new Exception($"Event '{e.ValueID}' does not exist");
+                }
 
-                // var boxed = await relation.IsBoxed();
-                // if (boxed) {
-                //     if (Int32.TryParse(e.Value, out var valueID)) {
-                //         var valueIndividual = await Storage.GetAttrValue(relation.ID, valueID);
+                if (Int32.TryParse(e.Value, out var valueID)) {
+                    var valueIndividual = await Storage.GetIndividual(valueID);
 
-                //         if (null == valueIndividual) {
-                //             throw new Exception($"Attribute value '{valueID}' is not defined for attribute '{relation.ID}'");
-                //         }
-                //     }
-                //     else {
-                //         throw new Exception($"Invalid attribute value ID: '{e.Value}', expected number");
-                //     }
-                // }
-                // else {
-                //     var valid = await relation.Validate(e.Value);
-                //     if (!valid) {
-                //         throw new Exception($"Invalid value for attribute '{relation.Value}'");
-                //     }
-                // }
+                    if (null == valueIndividual) {
+                        throw new Exception($"Individual '{valueID}' does not exist");
+                    }
+                }
+                else {
+                    throw new Exception($"Invalid attribute value ID: '{e.Value}', expected number");
+                }
 
-                // var cardinality = await Storage.GetModelPropertyValueProperty(individual.ConditionEventID, e.ValueID, StaticEvent.Cardinality);
-                // var cardinalityValue = cardinality == null ? Const.DefaultCardinality : Int32.Parse(cardinality.Value);
+                var cardinality = await Storage.GetModelPropertyValueProperty(individual.ConditionEventID, e.ValueID, StaticEvent.Cardinality);
+                var cardinalityValue = cardinality == null ? Const.DefaultCardinality : Int32.Parse(cardinality.Value);
 
-                // if (cardinalityValue != 0) {
-                //     var values = await Storage.GetIndividualAttribute(individual.ID, relation.ID);
-                //     if (cardinalityValue <= values.Count()) {
-                //         throw new Exception($"Cardinality violation, attribute '{relation.ID}' already hax maximum number of values");
-                //     }
-                // }
+                if (cardinalityValue != 0) {
+                    var values = await Storage.GetIndividualAttribute(individual.ID, relation.ID);
+                    if (cardinalityValue <= values.Count()) {
+                        throw new Exception($"Cardinality violation, relation '{relation.ID}' already hax maximum number of values");
+                    }
+                }
             }
             else {
                 throw new Exception("Relation can be added only to a model or an individual");

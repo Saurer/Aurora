@@ -29,6 +29,8 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IIndividual>> GetIndividuals();
         Task<IEnumerable<string>> GetIndividualAttribute(int individualID, int attributeID);
         Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetIndividualAttributes(int id);
+        Task<IEnumerable<string>> GetIndividualRelation(int individualID, int relationID);
+        Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetIndividualRelations(int id);
         Task<IEnumerable<IIndividual>> GetActors();
         Task<IEnumerable<IIndividual>> GetRoles();
         Task<IEntity> GetEntity(int entityID);
@@ -37,6 +39,7 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IIndividual>> GetEntityIndividuals(int id);
         Task<IRelation> GetRelation(int id);
         Task<IEnumerable<IRelation>> GetRelations();
+        Task<IEnumerable<IIndividual>> GetRelationCandidates();
         Task<bool> IsEventAncestor(int ancestor, int checkValue);
         Task<IIndividual> GetDataTypeIndividual(string name);
         DataType GetDataType(string name);

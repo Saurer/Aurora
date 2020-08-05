@@ -11,7 +11,7 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IModelProperty<IAttr>>> GetAllAttributes();
         Task<IEnumerable<IModelProperty<IRelation>>> GetOwnRelations();
         Task<IEnumerable<IModelProperty<IRelation>>> GetAllRelations();
-        Task<bool> Validate(IReadOnlyDictionary<int, IEnumerable<string>> values);
+        Task<bool> Validate(IReadOnlyDictionary<int, IEnumerable<string>> attributeValues, IReadOnlyDictionary<int, IEnumerable<string>> relationValues);
     }
 
     internal class Model : Event, IModel {
@@ -80,8 +80,9 @@ namespace AuroraCore.Storage {
             }
         }
 
-        public async Task<bool> Validate(IReadOnlyDictionary<int, IEnumerable<string>> values) {
+        public async Task<bool> Validate(IReadOnlyDictionary<int, IEnumerable<string>> attributeValues, IReadOnlyDictionary<int, IEnumerable<string>> relationValues) {
             var attributes = await GetAllAttributes();
+            var relations = await GetAllRelations();
 
             foreach (var modelAttr in attributes) {
                 var attrProperties = await modelAttr.GetValueProperties();
@@ -93,7 +94,7 @@ namespace AuroraCore.Storage {
                     continue;
                 }
 
-                if (values.TryGetValue(attr.ID, out var valuesCollection)) {
+                if (attributeValues.TryGetValue(attr.ID, out var valuesCollection)) {
                     foreach (var value in valuesCollection) {
                         var valid = await attr.Validate(value);
                         if (!valid) {
@@ -103,6 +104,22 @@ namespace AuroraCore.Storage {
                 }
                 else {
                     return false;
+                }
+            }
+
+            foreach (var modelRelation in relations) {
+                var required = await modelRelation.IsRequired();
+                var relation = await modelRelation.GetProperty();
+
+                if (required) {
+                    if (relationValues.TryGetValue(relation.ID, out var values)) {
+                        if (!values.Any()) {
+                            return false;
+                        }
+                    }
+                    else {
+                        return false;
+                    }
                 }
             }
 
