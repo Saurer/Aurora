@@ -103,10 +103,6 @@ namespace AuroraCore.Controllers {
         public async Task Attribute(IEvent e) {
             IEvent baseEvent = await Storage.GetEvent(e.BaseEventID);
 
-            if (null == baseEvent) {
-                throw new Exception($"Event '{e.BaseEventID}' does not exist");
-            }
-
             if (baseEvent.ValueID == StaticEvent.Model) {
                 int attrID;
 
@@ -161,7 +157,7 @@ namespace AuroraCore.Controllers {
                     }
                 }
 
-                var cardinality = await Storage.GetModelAttributeValueProperty(individual.ConditionEventID, e.ValueID, StaticEvent.Cardinality);
+                var cardinality = await Storage.GetModelPropertyValueProperty(individual.ConditionEventID, e.ValueID, StaticEvent.Cardinality);
                 var cardinalityValue = cardinality == null ? Const.DefaultCardinality : Int32.Parse(cardinality.Value);
 
                 if (cardinalityValue != 0) {
@@ -200,6 +196,7 @@ namespace AuroraCore.Controllers {
                 case StaticEvent.Actor:
                 case StaticEvent.Role:
                 case StaticEvent.DataType:
+                case StaticEvent.Relation:
                     break;
                 default:
                     switch (parentEvent.BaseEventID) {
@@ -248,18 +245,25 @@ namespace AuroraCore.Controllers {
         public async Task ValueProperty(IEvent e) {
             var baseEvent = await Storage.GetEvent(e.BaseEventID);
 
-            if (StaticEvent.Attribute != baseEvent.ValueID) {
+            if (StaticEvent.Attribute == baseEvent.ValueID) {
+                var attr = await Storage.GetAttribute(Int32.Parse(baseEvent.Value));
+                if (null == attr) {
+                    throw new Exception($"Attribute '{baseEvent.Value}' does not exist");
+                }
+            }
+            else if (StaticEvent.Relation == baseEvent.ValueID) {
+                var relation = await Storage.GetRelation(Int32.Parse(baseEvent.Value));
+                if (null == relation) {
+                    throw new Exception($"Relation '{baseEvent.Value}' does not exist");
+                }
+            }
+            else {
                 throw new Exception($"Invalid base event value: '{e.BaseEventID}'");
             }
 
             var model = await Storage.GetModel(baseEvent.BaseEventID);
             if (null == model) {
                 throw new Exception($"Model '{baseEvent.BaseEventID}' does not exist");
-            }
-
-            var attr = await Storage.GetAttribute(Int32.Parse(baseEvent.Value));
-            if (null == attr) {
-                throw new Exception($"Attribute '{baseEvent.Value}' does not exist");
             }
 
             switch (e.ValueID) {
@@ -277,6 +281,80 @@ namespace AuroraCore.Controllers {
 
                 default:
                     throw new Exception($"Unhandled value property type: '{e.ValueID}'");
+            }
+        }
+
+        [EventReaction(StaticEvent.Relation)]
+        public async Task Relation(IEvent e) {
+            IEvent baseEvent = await Storage.GetEvent(e.BaseEventID);
+
+            if (baseEvent.ValueID == StaticEvent.Model) {
+                int relationID;
+
+                if (!Int32.TryParse(e.Value, out relationID)) {
+                    throw new Exception("Invalid relation ID: " + e.Value);
+                }
+
+                var relation = await Storage.GetRelation(relationID);
+                if (null == relation) {
+                    throw new Exception("Relation " + relationID + " does not exist");
+                }
+
+                var model = await Storage.GetModel(e.BaseEventID);
+                if (null == model) {
+                    throw new Exception("Model " + e.BaseEventID + " does not exist");
+                }
+
+                var existingRelations = await model.GetAllRelations();
+                if (existingRelations.Any(a => a.Value == relationID.ToString())) {
+                    throw new Exception($"Model '{model.ID}' already has relation '{relationID}'");
+                }
+            }
+            else if (baseEvent.ValueID == StaticEvent.Individual) {
+                throw new NotImplementedException();
+                // var individual = await Storage.GetIndividual(baseEvent.ID);
+                // if (null == individual) {
+                //     throw new Exception("Individual " + baseEvent.ID + " does not exist");
+                // }
+
+                // var relation = await Storage.GetRelation(e.ValueID);
+
+                // if (null == relation) {
+                //     throw new Exception($"Event '{e.ValueID}' does not exist");
+                // }
+
+                // var boxed = await relation.IsBoxed();
+                // if (boxed) {
+                //     if (Int32.TryParse(e.Value, out var valueID)) {
+                //         var valueIndividual = await Storage.GetAttrValue(relation.ID, valueID);
+
+                //         if (null == valueIndividual) {
+                //             throw new Exception($"Attribute value '{valueID}' is not defined for attribute '{relation.ID}'");
+                //         }
+                //     }
+                //     else {
+                //         throw new Exception($"Invalid attribute value ID: '{e.Value}', expected number");
+                //     }
+                // }
+                // else {
+                //     var valid = await relation.Validate(e.Value);
+                //     if (!valid) {
+                //         throw new Exception($"Invalid value for attribute '{relation.Value}'");
+                //     }
+                // }
+
+                // var cardinality = await Storage.GetModelPropertyValueProperty(individual.ConditionEventID, e.ValueID, StaticEvent.Cardinality);
+                // var cardinalityValue = cardinality == null ? Const.DefaultCardinality : Int32.Parse(cardinality.Value);
+
+                // if (cardinalityValue != 0) {
+                //     var values = await Storage.GetIndividualAttribute(individual.ID, relation.ID);
+                //     if (cardinalityValue <= values.Count()) {
+                //         throw new Exception($"Cardinality violation, attribute '{relation.ID}' already hax maximum number of values");
+                //     }
+                // }
+            }
+            else {
+                throw new Exception("Relation can be added only to a model or an individual");
             }
         }
     }

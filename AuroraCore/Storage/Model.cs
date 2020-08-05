@@ -6,9 +6,11 @@ namespace AuroraCore.Storage {
     public interface IModel : IEvent {
         Task<IEvent> GetBaseEvent();
         Task<IModel> GetParent();
-        Task<IModelAttr> GetAttribute(int id);
-        Task<IEnumerable<IModelAttr>> GetOwnAttributes();
-        Task<IEnumerable<IModelAttr>> GetAllAttributes();
+        Task<IModelProperty<IAttr>> GetAttribute(int id);
+        Task<IEnumerable<IModelProperty<IAttr>>> GetOwnAttributes();
+        Task<IEnumerable<IModelProperty<IAttr>>> GetAllAttributes();
+        Task<IEnumerable<IModelProperty<IRelation>>> GetOwnRelations();
+        Task<IEnumerable<IModelProperty<IRelation>>> GetAllRelations();
         Task<bool> Validate(IReadOnlyDictionary<int, IEnumerable<string>> values);
     }
 
@@ -20,23 +22,45 @@ namespace AuroraCore.Storage {
             return await Context.Storage.GetEvent(BaseEventID);
         }
 
-        public async Task<IModelAttr> GetAttribute(int attrID) {
+        public async Task<IModelProperty<IAttr>> GetAttribute(int attrID) {
             var attribute = await Context.Storage.GetModelAttribute(ID, attrID);
             return attribute;
         }
 
-        public Task<IEnumerable<IModelAttr>> GetOwnAttributes() {
-            return Context.Storage.GetModelAttributes(ID);
+        public async Task<IEnumerable<IModelProperty<IAttr>>> GetOwnAttributes() {
+            return await Context.Storage.GetModelAttributes(ID);
         }
 
-        public async Task<IEnumerable<IModelAttr>> GetAllAttributes() {
+        public async Task<IEnumerable<IModelProperty<IAttr>>> GetAllAttributes() {
             var queue = new Queue<IModel>(new[] { this });
-            var result = new List<IModelAttr>();
+            var result = new List<IModelProperty<IAttr>>();
 
             while (queue.Count > 0) {
                 var model = queue.Dequeue();
                 var attributes = await model.GetOwnAttributes();
                 result.AddRange(attributes);
+
+                var parent = await model.GetParent();
+                if (null != parent) {
+                    queue.Enqueue(parent);
+                }
+            }
+
+            return result;
+        }
+
+        public async Task<IEnumerable<IModelProperty<IRelation>>> GetOwnRelations() {
+            return await Context.Storage.GetModelRelations(ID);
+        }
+
+        public async Task<IEnumerable<IModelProperty<IRelation>>> GetAllRelations() {
+            var queue = new Queue<IModel>(new[] { this });
+            var result = new List<IModelProperty<IRelation>>();
+
+            while (queue.Count > 0) {
+                var model = queue.Dequeue();
+                var relations = await model.GetOwnRelations();
+                result.AddRange(relations);
 
                 var parent = await model.GetParent();
                 if (null != parent) {
@@ -62,7 +86,7 @@ namespace AuroraCore.Storage {
             foreach (var modelAttr in attributes) {
                 var attrProperties = await modelAttr.GetValueProperties();
                 var requiredValue = attrProperties.Where(prop => prop.ValueID == StaticEvent.Required).SingleOrDefault()?.Value;
-                var attr = await modelAttr.GetAttribute();
+                var attr = await modelAttr.GetProperty();
 
                 // Value is not required
                 if (null == requiredValue ? Const.DefaultRequired == 0 : requiredValue == "0") {

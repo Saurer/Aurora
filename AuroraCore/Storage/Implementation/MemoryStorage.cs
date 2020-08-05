@@ -208,40 +208,41 @@ namespace AuroraCore.Storage.Implementation {
         }
 
 
-        public async Task<IEvent> GetModelAttributeValueProperty(int modelID, int attributeID, int valuePropertyID) {
-            var modelAttr = await GetModelAttribute(modelID, attributeID);
-
-            if (null == modelAttr) {
-                return null;
-            }
+        public async Task<IEvent> GetModelPropertyValueProperty(int modelID, int propertyID, int valuePropertyID) {
+            await Task.Yield();
 
             var property = (
-                from a in events
-                join parent in events on a.Value.ValueID equals parent.Value.ID
-                where a.Value.BaseEventID == modelAttr.ID && parent.Value.BaseEventID == StaticEvent.ValueProperty && a.Value.ValueID == valuePropertyID
-                select a.Value
+                from propValue in events
+                join assignment in events on propValue.Value.BaseEventID equals assignment.Value.ID
+                join propDef in events on propValue.Value.ValueID equals propDef.Key
+                where
+                    propDef.Value.BaseEventID == StaticEvent.ValueProperty &&
+                    assignment.Value.BaseEventID == modelID &&
+                    assignment.Value.Value == propertyID.ToString() &&
+                    propValue.Value.ValueID == valuePropertyID
+                select propValue.Value
             ).SingleOrDefault();
 
             return property;
         }
 
-        public async Task<IEnumerable<IEvent>> GetModelAttributeValueProperties(int modelID, int attributeID) {
-            var modelAttr = await GetModelAttribute(modelID, attributeID);
-
-            if (null == modelAttr) {
-                return Array.Empty<IEvent>();
-            }
+        public async Task<IEnumerable<IEvent>> GetModelPropertyValueProperties(int modelID, int propertyID) {
+            await Task.Yield();
 
             var properties =
-                from a in events
-                join parent in events on a.Value.ValueID equals parent.Value.ID
-                where a.Value.BaseEventID == modelAttr.ID && parent.Value.BaseEventID == StaticEvent.ValueProperty
-                select a.Value;
+                from propValue in events
+                join assignment in events on propValue.Value.BaseEventID equals assignment.Value.ID
+                join propDef in events on propValue.Value.ValueID equals propDef.Key
+                where
+                    propDef.Value.BaseEventID == StaticEvent.ValueProperty &&
+                    assignment.Value.BaseEventID == modelID &&
+                    assignment.Value.Value == propertyID.ToString()
+                select propValue.Value;
 
             return properties;
         }
 
-        public async Task<IModelAttr> GetModelAttribute(int modelID, int attrID) {
+        public async Task<IModelProperty<IAttr>> GetModelAttribute(int modelID, int attrID) {
             await Task.Yield();
 
             var attr = (
@@ -254,10 +255,10 @@ namespace AuroraCore.Storage.Implementation {
                 return null;
             }
 
-            return new ModelAttr(context, attr);
+            return new ModelProperty<IAttr>(context, attr);
         }
 
-        public async Task<IEnumerable<IModelAttr>> GetModelAttributes(int modelID) {
+        public async Task<IEnumerable<IModelProperty<IAttr>>> GetModelAttributes(int modelID) {
             var attrIDs =
                 from e in events
                 where e.Value.ValueID == StaticEvent.Attribute && e.Value.BaseEventID == modelID
@@ -268,6 +269,34 @@ namespace AuroraCore.Storage.Implementation {
             );
 
             return attributes;
+        }
+        
+        public async Task<IModelProperty<IRelation>> GetModelRelation(int modelID, int relationID) {
+            await Task.Yield();
+
+            var relation = (
+                from e in events
+                where e.Value.BaseEventID == modelID && e.Value.ValueID == StaticEvent.Relation && e.Value.Value == relationID.ToString()
+                select e.Value
+            ).SingleOrDefault();
+
+            if (null == relation) {
+                return null;
+            }
+
+            return new ModelProperty<IRelation>(context, relation);
+        }
+
+        public async Task<IEnumerable<IModelProperty<IRelation>>> GetModelRelations(int modelID) {
+            await Task.Yield();
+
+            var relationIDs =
+                from e in events
+                where e.Value.BaseEventID == modelID && e.Value.ValueID == StaticEvent.Relation
+                select Int32.Parse(e.Value.Value);
+
+            var relations = await Task.WhenAll(relationIDs.Select(relation => GetModelRelation(modelID, relation)));
+            return relations;
         }
 
         public async Task<IIndividual> GetIndividual(int id) {
@@ -392,6 +421,27 @@ namespace AuroraCore.Storage.Implementation {
                 select e.Key;
 
             return await Task.WhenAll(individualIDs.Select(individual => GetIndividual(individual)));
+        }
+
+        public async Task<IRelation> GetRelation(int id) {
+            var relationDef = await GetEvent(id);
+
+            if (relationDef.ValueID != StaticEvent.Individual || relationDef.BaseEventID != StaticEvent.Relation) {
+                return null;
+            }
+
+            return new Relation(context, relationDef);
+        }
+
+        public async Task<IEnumerable<IRelation>> GetRelations() {
+            var relationIDs =
+                from e in events
+                where
+                    e.Value.ValueID == StaticEvent.Individual &&
+                    e.Value.BaseEventID == StaticEvent.Relation
+                select e.Key;
+
+            return await Task.WhenAll(relationIDs.Select(id => GetRelation(id)));
         }
 
         public async Task<bool> IsEventAncestor(int ancestor, int checkValue) {

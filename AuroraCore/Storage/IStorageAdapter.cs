@@ -19,10 +19,12 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IEvent>> GetAttrValues(int attrID);
         Task<IModel> GetModel(int id);
         Task<IEnumerable<IModel>> GetModels();
-        Task<IModelAttr> GetModelAttribute(int modelID, int attrID);
-        Task<IEnumerable<IModelAttr>> GetModelAttributes(int modelID);
-        Task<IEvent> GetModelAttributeValueProperty(int modelID, int attributeID, int valuePropertyID);
-        Task<IEnumerable<IEvent>> GetModelAttributeValueProperties(int modelID, int attributeID);
+        Task<IModelProperty<IAttr>> GetModelAttribute(int modelID, int attrID);
+        Task<IEnumerable<IModelProperty<IAttr>>> GetModelAttributes(int modelID);
+        Task<IModelProperty<IRelation>> GetModelRelation(int modelID, int relationID);
+        Task<IEnumerable<IModelProperty<IRelation>>> GetModelRelations(int modelID);
+        Task<IEvent> GetModelPropertyValueProperty(int modelID, int attributeID, int valuePropertyID);
+        Task<IEnumerable<IEvent>> GetModelPropertyValueProperties(int modelID, int attributeID);
         Task<IIndividual> GetIndividual(int id);
         Task<IEnumerable<IIndividual>> GetIndividuals();
         Task<IEnumerable<string>> GetIndividualAttribute(int individualID, int attributeID);
@@ -33,6 +35,8 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IEntity>> GetEntities();
         Task<IEnumerable<IModel>> GetEntityModels(int id);
         Task<IEnumerable<IIndividual>> GetEntityIndividuals(int id);
+        Task<IRelation> GetRelation(int id);
+        Task<IEnumerable<IRelation>> GetRelations();
         Task<bool> IsEventAncestor(int ancestor, int checkValue);
         Task<IIndividual> GetDataTypeIndividual(string name);
         DataType GetDataType(string name);

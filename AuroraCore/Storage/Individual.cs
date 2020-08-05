@@ -9,7 +9,7 @@ namespace AuroraCore.Storage {
         Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetAttributes();
     }
 
-    internal sealed class Individual : Event, IIndividual {
+    internal class Individual : Event, IIndividual {
         public Individual(IDataContext context, IEvent e) : base(context, e) {
 
         }
