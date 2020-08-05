@@ -2,15 +2,15 @@ using AuroraCore.Types;
 
 namespace AuroraCore.Storage {
     public interface IDataContext {
-        IStorageAdapter Storage { get; }
+        IStorageAPI Storage { get; }
         ITypeManager Types { get; }
     }
 
     internal class DataContext : IDataContext {
-        public IStorageAdapter Storage { get; private set; }
+        public IStorageAPI Storage { get; private set; }
         public ITypeManager Types { get; private set; }
 
-        public DataContext(IStorageAdapter storage, ITypeManager typeManager) {
+        public DataContext(IStorageAPI storage, ITypeManager typeManager) {
             Storage = storage;
             Types = typeManager;
         }

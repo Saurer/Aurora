@@ -13,9 +13,21 @@ namespace AuroraCore.Storage.Implementation {
             context = new DataContext(this, typeManager);
         }
 
+        public async Task Rollback(int positionID) {
+            var positionEvent = await GetEvent(positionID);
+            events = events
+                .Where(kv => kv.Value.Date > positionEvent.Date)
+                .ToDictionary(k => k.Key, v => v.Value);
+        }
+
         public async Task AddEvent(IEvent e) {
             await Task.Yield();
             events.Add(e.ID, e);
+        }
+
+        public async Task Prune() {
+            await Task.Yield();
+            events = new Dictionary<int, IEvent>();
         }
 
         public async Task<IEvent> GetEvent(int id) {
@@ -270,7 +282,7 @@ namespace AuroraCore.Storage.Implementation {
 
             return attributes;
         }
-        
+
         public async Task<IModelProperty<IRelation>> GetModelRelation(int modelID, int relationID) {
             await Task.Yield();
 

@@ -5,9 +5,9 @@ using AuroraCore.Storage;
 
 namespace AuroraCore.Controllers {
     public abstract class Controller {
-        protected IStorageAdapter Storage { get; private set; }
+        protected IStorageAPI Storage { get; private set; }
 
-        public static T Instantiate<T>(IStorageAdapter storage) where T : Controller, new() {
+        public static T Instantiate<T>(IStorageAPI storage) where T : Controller, new() {
             T value = new T();
             value.Storage = storage;
             return value;

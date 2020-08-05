@@ -13,7 +13,7 @@ namespace AuroraCore {
         private Dictionary<int, List<Func<IEvent, Task>>> reactions = new Dictionary<int, List<Func<IEvent, Task>>>();
         private NetworkManager netMon;
 
-        public IStorageAdapter Storage {
+        public IStorageAPI Storage {
             get {
                 return storage;
             }
@@ -84,7 +84,7 @@ namespace AuroraCore {
             }
 
 #warning TODO: Catch exceptions
-            await Storage.AddEvent(e);
+            await storage.AddEvent(e);
             Position++;
         }
 
@@ -95,8 +95,17 @@ namespace AuroraCore {
             }
 
 #warning TODO: Catch exceptions
-            await Storage.AddEvent(packet.Value);
+            await storage.AddEvent(packet.Value);
             Position++;
+        }
+
+        public async Task Restore(IEnumerable<IEvent> events) {
+            await storage.Prune();
+            Position = 0;
+
+            foreach (var e in events) {
+                await ProcessEvent(e);
+            }
         }
 
         public async Task Connect<T>(IPEndPoint endpoint) where T : INetworkAdapter {
