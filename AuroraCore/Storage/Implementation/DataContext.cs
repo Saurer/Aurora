@@ -1,11 +1,6 @@
 using AuroraCore.Types;
 
-namespace AuroraCore.Storage {
-    public interface IDataContext {
-        IStorageAPI Storage { get; }
-        ITypeManager Types { get; }
-    }
-
+namespace AuroraCore.Storage.Implementation {
     internal class DataContext : IDataContext {
         public IStorageAPI Storage { get; private set; }
         public ITypeManager Types { get; private set; }

@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace AuroraCore.Storage {
     public interface IStorageInternals {
-        Task AddEvent(IEvent value);
+        Task AddEvent(IEventData value);
         Task Rollback(int positionID);
         Task Prune();
     }

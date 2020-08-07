@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
 namespace Aurora {
-    public class EventData : IEvent {
+    public class EventData : IEventData {
         public int ID { get; set; }
         public int BaseEventID { get; set; }
         public int ValueID { get; set; }

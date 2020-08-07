@@ -6,7 +6,7 @@ using AuroraCore.Storage;
 namespace AuroraCore.Controllers {
     public class EventController : Controller {
         [EventReaction(StaticEvent.Event)]
-        public async Task Event(IEvent e) {
+        public async Task Event(IEventData e) {
             var existingEvent = await Storage.GetEvent(e.ID);
             if (null != existingEvent) {
                 throw new Exception($"Event '{e.ID}' already exists");
@@ -30,7 +30,7 @@ namespace AuroraCore.Controllers {
         }
 
         [EventReaction(StaticEvent.SubEvent)]
-        public async Task SubEvent(IEvent e) {
+        public async Task SubEvent(IEventData e) {
             IEvent parent = await Storage.GetEvent(e.BaseEventID);
 
             if (null == parent) {
@@ -38,43 +38,43 @@ namespace AuroraCore.Controllers {
             }
         }
 
-        [EventReaction(StaticEvent.AttributeProperty)]
-        public async Task AttributeProperty(IEvent e) {
+        [EventReaction(StaticEvent.AttributeConstraint)]
+        public async Task AttributeProperty(IEventData e) {
             IEvent parent = await Storage.GetEvent(e.BaseEventID);
             if (null == parent) {
                 throw new Exception($"Base event {e.BaseEventID} does not exist");
             }
 
-            int propertyDefID;
-            if (!Int32.TryParse(e.Value, out propertyDefID)) {
+            int constraintDefID;
+            if (!Int32.TryParse(e.Value, out constraintDefID)) {
                 throw new Exception($"Expected ID: '{e.Value}'");
             }
 
-            IEvent propertyDef = await Storage.GetEvent(propertyDefID);
+            IEvent propertyDef = await Storage.GetEvent(constraintDefID);
             if (null == propertyDef) {
-                throw new Exception($"Property definition {propertyDefID} does not exist");
+                throw new Exception($"Property definition {constraintDefID} does not exist");
             }
 
-            if (parent.ValueID == StaticEvent.Model) {
-                if (parent.BaseEventID != StaticEvent.Attribute) {
+            if (parent.EventValue.ValueID == StaticEvent.Model) {
+                if (parent.EventValue.BaseEventID != StaticEvent.Attribute) {
                     throw new Exception($"Only attributes can have properties");
                 }
             }
-            else if (parent.BaseEventID == StaticEvent.Attribute) {
+            else if (parent.EventValue.BaseEventID == StaticEvent.Attribute) {
                 var attr = await Storage.GetAttribute(e.BaseEventID);
                 if (null == attr) {
                     throw new Exception("Attribute " + e.BaseEventID + " does not exist");
                 }
 
-                var property = await Storage.GetAttrProperty(e.ValueID);
+                var constraint = await Storage.GetAttributeConstraint(e.ValueID);
 
-                if (null == property) {
-                    throw new Exception($"Attribute property '{propertyDefID}' does not exist");
+                if (null == constraint) {
+                    throw new Exception($"Attribute constaint '{e.ValueID}' does not exist");
                 }
 
-                var exists = await property.ContainsValue(propertyDefID);
+                var exists = await constraint.ContainsValueCandidate(constraintDefID);
                 if (!exists) {
-                    throw new Exception($"Value '{propertyDefID}' is not assignable to this event");
+                    throw new Exception($"Value '{constraintDefID}' is not assignable to this event");
                 }
             }
             else {
@@ -83,27 +83,27 @@ namespace AuroraCore.Controllers {
         }
 
         [EventReaction(StaticEvent.Model)]
-        public async Task Model(IEvent e) {
+        public async Task Model(IEventData e) {
             var parent = await Storage.GetEvent(e.ConditionEventID);
             if (null == parent) {
                 throw new Exception($"Event '{e.ConditionEventID}' does not exist");
             }
 
-            if (parent.ValueID != StaticEvent.Model && parent.ValueID != StaticEvent.Event) {
+            if (parent.EventValue.ValueID != StaticEvent.Model && parent.EventValue.ValueID != StaticEvent.Event) {
                 throw new Exception("Model base can only be another model");
             }
 
-            var parentModel = await Storage.GetModel(parent.ID);
+            var parentModel = await Storage.GetModel(parent.EventValue.ID);
             if (e.ConditionEventID != StaticEvent.Event && null == parentModel) {
                 throw new Exception("Model " + e.ConditionEventID + " does not exist");
             }
         }
 
         [EventReaction(StaticEvent.Attribute)]
-        public async Task Attribute(IEvent e) {
+        public async Task Attribute(IEventData e) {
             IEvent baseEvent = await Storage.GetEvent(e.BaseEventID);
 
-            if (baseEvent.ValueID == StaticEvent.Model) {
+            if (baseEvent.EventValue.ValueID == StaticEvent.Model) {
                 int attrID;
 
                 if (!Int32.TryParse(e.Value, out attrID)) {
@@ -120,15 +120,15 @@ namespace AuroraCore.Controllers {
                     throw new Exception("Model " + e.BaseEventID + " does not exist");
                 }
 
-                var existingAttrs = await model.GetAllAttributes();
-                if (existingAttrs.Any(a => a.Value == attrID.ToString())) {
-                    throw new Exception($"Model '{model.ID}' already has attribute '{attrID}'");
+                var existingAttr = await model.Properties.GetAttribute(attrID);
+                if (existingAttr != null) {
+                    throw new Exception($"Model '{model.ModelID}' already has attribute '{attrID}'");
                 }
             }
-            else if (baseEvent.ValueID == StaticEvent.Individual) {
-                var individual = await Storage.GetIndividual(baseEvent.ID);
+            else if (baseEvent.EventValue.ValueID == StaticEvent.Individual) {
+                var individual = await Storage.GetIndividual(baseEvent.EventValue.ID);
                 if (null == individual) {
-                    throw new Exception("Individual " + baseEvent.ID + " does not exist");
+                    throw new Exception("Individual " + baseEvent.EventValue.ID + " does not exist");
                 }
 
                 var attribute = await Storage.GetAttribute(e.ValueID);
@@ -140,10 +140,10 @@ namespace AuroraCore.Controllers {
                 var boxed = await attribute.IsBoxed();
                 if (boxed) {
                     if (Int32.TryParse(e.Value, out var valueID)) {
-                        var valueIndividual = await Storage.GetAttrValue(attribute.ID, valueID);
+                        var valueIndividual = await Storage.GetAttributeValueCandidate(attribute.PropertyID, valueID);
 
                         if (null == valueIndividual) {
-                            throw new Exception($"Attribute value '{valueID}' is not defined for attribute '{attribute.ID}'");
+                            throw new Exception($"Attribute value '{valueID}' is not defined for attribute '{attribute.PropertyID}'");
                         }
                     }
                     else {
@@ -153,17 +153,18 @@ namespace AuroraCore.Controllers {
                 else {
                     var valid = await attribute.Validate(e.Value);
                     if (!valid) {
-                        throw new Exception($"Invalid value for attribute '{attribute.Value}'");
+                        throw new Exception($"Invalid value for attribute '{attribute.Label}'");
                     }
                 }
 
-                var cardinality = await Storage.GetModelPropertyValueProperty(individual.ConditionEventID, e.ValueID, StaticEvent.Cardinality);
-                var cardinalityValue = cardinality == null ? Const.DefaultCardinality : Int32.Parse(cardinality.Value);
+                var model = await individual.GetModel();
+                var property = await model.Properties.GetAttribute(e.ValueID);
+                var cardinality = await property.GetCardinality();
 
-                if (cardinalityValue != 0) {
-                    var values = await Storage.GetIndividualAttribute(individual.ID, attribute.ID);
-                    if (cardinalityValue <= values.Count()) {
-                        throw new Exception($"Cardinality violation, attribute '{attribute.ID}' already hax maximum number of values");
+                if (cardinality != 0) {
+                    var values = await individual.Properties.GetAttribute(attribute.PropertyID);
+                    if (cardinality <= values.Count()) {
+                        throw new Exception($"Cardinality violation, attribute '{attribute.PropertyID}' already hax maximum number of values");
                     }
                 }
             }
@@ -173,7 +174,7 @@ namespace AuroraCore.Controllers {
         }
 
         [EventReaction(StaticEvent.Individual)]
-        public async Task Individual(IEvent e) {
+        public async Task Individual(IEventData e) {
             var parentEvent = await Storage.GetEvent(e.BaseEventID);
             if (null == parentEvent) {
                 throw new Exception($"Event '{e.BaseEventID}' does not exist");
@@ -199,7 +200,7 @@ namespace AuroraCore.Controllers {
                 case StaticEvent.Relation:
                     break;
                 default:
-                    switch (parentEvent.BaseEventID) {
+                    switch (parentEvent.EventValue.BaseEventID) {
                         case StaticEvent.Entity:
                             break;
                         default:
@@ -210,7 +211,7 @@ namespace AuroraCore.Controllers {
         }
 
         [EventReaction(StaticEvent.DataType)]
-        public async Task DataType(IEvent e) {
+        public async Task DataType(IEventData e) {
             int typeID;
             if (!Int32.TryParse(e.Value, out typeID)) {
                 throw new Exception("Invalid DataType: " + e.Value);
@@ -221,14 +222,14 @@ namespace AuroraCore.Controllers {
                 throw new Exception("DataType '" + e.Value + "' is not registered");
             }
 
-            var dataType = Storage.GetDataType(typeValue.Value);
+            var dataType = Storage.GetDataType(typeValue.Label);
             if (null == dataType) {
-                throw new Exception("Type '" + typeValue.Value + "' is not active");
+                throw new Exception("Type '" + typeValue.Label + "' is not active");
             }
         }
 
         [EventReaction(StaticEvent.AttributeValue)]
-        public async Task AttributeValue(IEvent e) {
+        public async Task AttributeValue(IEventData e) {
             var attr = await Storage.GetAttribute(e.BaseEventID);
 
             if (null == attr) {
@@ -237,33 +238,33 @@ namespace AuroraCore.Controllers {
 
             var dt = await attr.GetDataType();
             if (!dt.AllowsBoxedValue(e.Value)) {
-                throw new Exception($"Invalid value for attribute '{attr.Value}'");
+                throw new Exception($"Invalid value for attribute '{attr.Label}'");
             }
         }
 
         [EventReaction(StaticEvent.ValueProperty)]
-        public async Task ValueProperty(IEvent e) {
+        public async Task ValueProperty(IEventData e) {
             var baseEvent = await Storage.GetEvent(e.BaseEventID);
 
-            if (StaticEvent.Attribute == baseEvent.ValueID) {
-                var attr = await Storage.GetAttribute(Int32.Parse(baseEvent.Value));
+            if (StaticEvent.Attribute == baseEvent.EventValue.ValueID) {
+                var attr = await Storage.GetAttribute(Int32.Parse(baseEvent.EventValue.Value));
                 if (null == attr) {
-                    throw new Exception($"Attribute '{baseEvent.Value}' does not exist");
+                    throw new Exception($"Attribute '{baseEvent.EventValue.Value}' does not exist");
                 }
             }
-            else if (StaticEvent.Relation == baseEvent.ValueID) {
-                var relation = await Storage.GetRelation(Int32.Parse(baseEvent.Value));
+            else if (StaticEvent.Relation == baseEvent.EventValue.ValueID) {
+                var relation = await Storage.GetRelation(Int32.Parse(baseEvent.EventValue.Value));
                 if (null == relation) {
-                    throw new Exception($"Relation '{baseEvent.Value}' does not exist");
+                    throw new Exception($"Relation '{baseEvent.EventValue.Value}' does not exist");
                 }
             }
             else {
                 throw new Exception($"Invalid base event value: '{e.BaseEventID}'");
             }
 
-            var model = await Storage.GetModel(baseEvent.BaseEventID);
+            var model = await Storage.GetModel(baseEvent.EventValue.BaseEventID);
             if (null == model) {
-                throw new Exception($"Model '{baseEvent.BaseEventID}' does not exist");
+                throw new Exception($"Model '{baseEvent.EventValue.BaseEventID}' does not exist");
             }
 
             switch (e.ValueID) {
@@ -285,10 +286,10 @@ namespace AuroraCore.Controllers {
         }
 
         [EventReaction(StaticEvent.Relation)]
-        public async Task Relation(IEvent e) {
+        public async Task Relation(IEventData e) {
             IEvent baseEvent = await Storage.GetEvent(e.BaseEventID);
 
-            if (baseEvent.ValueID == StaticEvent.Model) {
+            if (baseEvent.EventValue.ValueID == StaticEvent.Model) {
                 int relationID;
 
                 if (!Int32.TryParse(e.Value, out relationID)) {
@@ -305,15 +306,15 @@ namespace AuroraCore.Controllers {
                     throw new Exception("Model " + e.BaseEventID + " does not exist");
                 }
 
-                var existingRelations = await model.GetAllRelations();
-                if (existingRelations.Any(a => a.Value == relationID.ToString())) {
-                    throw new Exception($"Model '{model.ID}' already has relation '{relationID}'");
+                var existingRelation = await model.Properties.GetRelation(relationID);
+                if (existingRelation != null) {
+                    throw new Exception($"Model '{model.ModelID}' already has relation '{relationID}'");
                 }
             }
-            else if (baseEvent.ValueID == StaticEvent.Individual) {
-                var individual = await Storage.GetIndividual(baseEvent.ID);
+            else if (baseEvent.EventValue.ValueID == StaticEvent.Individual) {
+                var individual = await Storage.GetIndividual(baseEvent.EventValue.ID);
                 if (null == individual) {
-                    throw new Exception("Individual " + baseEvent.ID + " does not exist");
+                    throw new Exception("Individual " + baseEvent.EventValue.ID + " does not exist");
                 }
 
                 var relation = await Storage.GetRelation(e.ValueID);
@@ -333,13 +334,14 @@ namespace AuroraCore.Controllers {
                     throw new Exception($"Invalid attribute value ID: '{e.Value}', expected number");
                 }
 
-                var cardinality = await Storage.GetModelPropertyValueProperty(individual.ConditionEventID, e.ValueID, StaticEvent.Cardinality);
-                var cardinalityValue = cardinality == null ? Const.DefaultCardinality : Int32.Parse(cardinality.Value);
+                var model = await individual.GetModel();
+                var property = await model.Properties.GetRelation(e.ValueID);
+                var cardinality = await property.GetCardinality();
 
-                if (cardinalityValue != 0) {
-                    var values = await Storage.GetIndividualAttribute(individual.ID, relation.ID);
-                    if (cardinalityValue <= values.Count()) {
-                        throw new Exception($"Cardinality violation, relation '{relation.ID}' already hax maximum number of values");
+                if (cardinality != 0) {
+                    var values = await individual.Properties.GetRelation(relation.PropertyID);
+                    if (cardinality <= values.Count()) {
+                        throw new Exception($"Cardinality violation, relation '{relation.PropertyID}' already hax maximum number of values");
                     }
                 }
             }

@@ -10,7 +10,7 @@ namespace AuroraCore {
     public class EngineBase {
         private IStorageAdapter storage;
         private List<Controller> controllers = new List<Controller>();
-        private Dictionary<int, List<Func<IEvent, Task>>> reactions = new Dictionary<int, List<Func<IEvent, Task>>>();
+        private Dictionary<int, List<Func<IEventData, Task>>> reactions = new Dictionary<int, List<Func<IEventData, Task>>>();
         private NetworkManager netMon;
 
         public IStorageAPI Storage {
@@ -27,16 +27,16 @@ namespace AuroraCore {
             AddController<EventController>();
         }
 
-        public void AddReaction(int eventID, Func<IEvent, Task> reaction) {
+        public void AddReaction(int eventID, Func<IEventData, Task> reaction) {
             if (!reactions.ContainsKey(eventID)) {
-                reactions[eventID] = new List<Func<IEvent, Task>>();
+                reactions[eventID] = new List<Func<IEventData, Task>>();
             }
 
             reactions[eventID].Add(reaction);
         }
 
-        public async Task<IEnumerable<Func<IEvent, Task>>> GetReactionsFor(IEvent e) {
-            var result = new List<Func<IEvent, Task>>();
+        public async Task<IEnumerable<Func<IEventData, Task>>> GetReactionsFor(IEventData e) {
+            var result = new List<Func<IEventData, Task>>();
 
             foreach (var reaction in reactions) {
                 // TODO: It is possible to cache 
@@ -73,7 +73,7 @@ namespace AuroraCore {
             netMon.AddNetworkAdapter(adapter);
         }
 
-        public async Task ProcessEvent(IEvent e) {
+        public async Task ProcessEvent(IEventData e) {
             if (netMon.State == NetworkState.Sync) {
                 throw new Exception("Engine is syncing");
             }
@@ -99,7 +99,7 @@ namespace AuroraCore {
             Position++;
         }
 
-        public async Task Restore(IEnumerable<IEvent> events) {
+        public async Task Restore(IEnumerable<IEventData> events) {
             await storage.Prune();
             Position = 0;
 

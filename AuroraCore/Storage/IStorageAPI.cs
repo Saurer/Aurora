@@ -4,43 +4,77 @@ using AuroraCore.Types;
 
 namespace AuroraCore.Storage {
     public interface IStorageAPI {
+        #region Event
         Task<IEvent> GetEvent(int id);
         Task<IEnumerable<IEvent>> GetEvents(int offset = 0, int limit = 10);
-        Task<IAttr> GetAttribute(int id);
+        #endregion
+
+        #region Attribute
+        Task<IAttr> GetAttribute(int attributeID);
         Task<IEnumerable<IAttr>> GetAttributes();
-        Task<IAttrModel> GetAttrModel();
-        Task<IAttrProperty> GetAttrProperty(int propertyID);
-        Task<IEnumerable<IAttrProperty>> GetAttrProperties();
-        Task<IAttrPropertyMember> GetAttrPropertyMember(int attrID, int propertyID);
-        Task<IEnumerable<IAttrPropertyMember>> GetAttrPropertyMembers(int attrID);
-        Task<IEnumerable<IIndividual>> GetAttrPropertyValues(int propertyID);
-        Task<IEvent> GetAttrValue(int attrID, int valueID);
-        Task<IEnumerable<IEvent>> GetAttrValues(int attrID);
-        Task<IModel> GetModel(int id);
+        Task<IAttrConstraint> GetAttributeConstraint(int constraintID);
+        Task<IEnumerable<IAttrConstraint>> GetAttributeConstraints();
+        Task<IEnumerable<IIndividual>> GetAttributeConstraintValues(int constraintID);
+        Task<IAttachedAttrConstraint> GetAttributeAttachedConstraint(int attributeID, int constraintID);
+        Task<IEnumerable<IAttachedAttrConstraint>> GetAttributeAttachedConstraints(int attributeID);
+        Task<IEvent> GetAttributeValueCandidate(int attributeID, int individualID);
+        Task<IEnumerable<IEvent>> GetAttributeValueCandidates(int attributeID);
+        #endregion
+
+        #region Relation
+        Task<IRelation> GetRelation(int relationID);
+        Task<IEnumerable<IRelation>> GetRelations();
+        Task<IEnumerable<IIndividual>> GetRelationValueCandidates();
+        #endregion
+
+        #region Model
+        Task<IModel> GetModel(int modelID);
         Task<IEnumerable<IModel>> GetModels();
-        Task<IModelProperty<IAttr>> GetModelAttribute(int modelID, int attrID);
-        Task<IEnumerable<IModelProperty<IAttr>>> GetModelAttributes(int modelID);
-        Task<IModelProperty<IRelation>> GetModelRelation(int modelID, int relationID);
-        Task<IEnumerable<IModelProperty<IRelation>>> GetModelRelations(int modelID);
-        Task<IEvent> GetModelPropertyValueProperty(int modelID, int attributeID, int valuePropertyID);
-        Task<IEnumerable<IEvent>> GetModelPropertyValueProperties(int modelID, int attributeID);
-        Task<IIndividual> GetIndividual(int id);
-        Task<IEnumerable<IIndividual>> GetIndividuals();
-        Task<IEnumerable<string>> GetIndividualAttribute(int individualID, int attributeID);
-        Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetIndividualAttributes(int id);
-        Task<IEnumerable<string>> GetIndividualRelation(int individualID, int relationID);
-        Task<IReadOnlyDictionary<int, IEnumerable<string>>> GetIndividualRelations(int id);
-        Task<IEnumerable<IIndividual>> GetActors();
-        Task<IEnumerable<IIndividual>> GetRoles();
+        #endregion
+
+        #region Property provider
+        Task<IAttachedProperty<IAttr>> GetPropertyProviderAttribute(int providerID, int attrID);
+        Task<IEnumerable<IAttachedProperty<IAttr>>> GetPropertyProviderAttributes(int providerID);
+        Task<IAttachedProperty<IRelation>> GetPropertyProviderRelation(int providerID, int relationID);
+        Task<IEnumerable<IAttachedProperty<IRelation>>> GetPropertyProviderRelations(int providerID);
+        Task<IEvent> GetPropertyProviderValueConstraint(int providerID, int propertyID, int constraintID);
+        Task<IEnumerable<IEvent>> GetPropertyProviderValueConstraints(int providerID, int propertyID);
+        #endregion
+
+        #region Property container
+        Task<IEnumerable<IBoxedValue>> GetPropertyContainerAttribute(int containerID, int attributeID);
+        Task<IReadOnlyDictionary<int, IEnumerable<IBoxedValue>>> GetPropertyContainerAttributes(int containerID);
+        Task<IEnumerable<IBoxedValue>> GetPropertyContainerRelation(int containerID, int relationID);
+        Task<IReadOnlyDictionary<int, IEnumerable<IBoxedValue>>> GetPropertyContainerRelations(int containerID);
+        #endregion
+
+        #region Entity
         Task<IEntity> GetEntity(int entityID);
         Task<IEnumerable<IEntity>> GetEntities();
-        Task<IEnumerable<IModel>> GetEntityModels(int id);
-        Task<IEnumerable<IIndividual>> GetEntityIndividuals(int id);
-        Task<IRelation> GetRelation(int id);
-        Task<IEnumerable<IRelation>> GetRelations();
-        Task<IEnumerable<IIndividual>> GetRelationCandidates();
+        Task<IEnumerable<IModel>> GetEntityModels(int entityID);
+        Task<IEnumerable<IIndividual>> GetEntityIndividuals(int entityID);
+        #endregion
+
+        #region Individual
+        Task<IIndividual> GetIndividual(int individualID);
+        Task<IEnumerable<IIndividual>> GetIndividuals();
+        #endregion
+
+
+        #region Actor
+        Task<IIndividual> GetActor(int actorID);
+        Task<IEnumerable<IIndividual>> GetActors();
+        #endregion
+
+        #region Role
+        Task<IIndividual> GetRole(int roleID);
+        Task<IEnumerable<IIndividual>> GetRoles();
+        #endregion
+
+        #region Other
         Task<bool> IsEventAncestor(int ancestor, int checkValue);
         Task<IIndividual> GetDataTypeIndividual(string name);
         DataType GetDataType(string name);
+        #endregion
     }
 }

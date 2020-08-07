@@ -11,14 +11,14 @@ namespace Aurora {
             SubEvent(StaticEvent.Entity, StaticEvent.Event, "Entity", StaticEvent.Event),
             SubEvent(StaticEvent.Relation, StaticEvent.Event, "Relation", StaticEvent.Event),
             SubEvent(StaticEvent.Attribute, StaticEvent.Event, "Attribute", StaticEvent.Event),
-            SubEvent(StaticEvent.AttributeProperty, StaticEvent.Event, "AttributeProperty", StaticEvent.Event),
+            SubEvent(StaticEvent.AttributeConstraint, StaticEvent.Event, "AttributeProperty", StaticEvent.Event),
             SubEvent(StaticEvent.Model, StaticEvent.Event, "Model", StaticEvent.Event),
             SubEvent(StaticEvent.Individual, StaticEvent.Event, "Individual", StaticEvent.Event),
             SubEvent(StaticEvent.Role, StaticEvent.Event, "Role", StaticEvent.Event),
             SubEvent(StaticEvent.ValueProperty, StaticEvent.Event, "ValueProperty", StaticEvent.Event),
 
-            SubEvent(StaticEvent.DataType, StaticEvent.AttributeProperty, "DataType", StaticEvent.AttributeProperty),
-            SubEvent(StaticEvent.AttributeValue, StaticEvent.Event, "AttributeValue", StaticEvent.AttributeProperty),
+            SubEvent(StaticEvent.DataType, StaticEvent.AttributeConstraint, "DataType", StaticEvent.AttributeConstraint),
+            SubEvent(StaticEvent.AttributeValue, StaticEvent.Event, "AttributeValue", StaticEvent.AttributeConstraint),
 
             SubEvent(StaticEvent.Cardinality, StaticEvent.ValueProperty, "Cardinality", StaticEvent.ValueProperty),
             SubEvent(StaticEvent.Required, StaticEvent.ValueProperty, "Required", StaticEvent.ValueProperty),
@@ -54,7 +54,7 @@ namespace Aurora {
             new EventData(id, baseEventID, StaticEvent.Individual, modelID, StaticEvent.Event, name);
 
         private static EventData AttributeProperty(int id, int propertyID) =>
-            new EventData(id, StaticEvent.AttributeModel, StaticEvent.AttributeProperty, StaticEvent.AttributeModel, StaticEvent.Event, propertyID.ToString());
+            new EventData(id, StaticEvent.AttributeModel, StaticEvent.AttributeConstraint, StaticEvent.AttributeModel, StaticEvent.Event, propertyID.ToString());
 
         private static EventData DataType(int id, int attributeID, int dataTypeID) =>
             new EventData(id, attributeID, StaticEvent.DataType, attributeID, StaticEvent.Event, dataTypeID.ToString());
