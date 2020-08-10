@@ -328,8 +328,9 @@ namespace AuroraCore.Storage.Implementation {
         public async Task<IPropertyContainer> GetPropertyContainer(int containerID) {
             var containerEvent = await GetEvent(containerID);
             var isAttr = await IsEventAncestor(StaticEvent.Attribute, containerEvent.EventValue.ValueID);
+            var isRelation = await IsEventAncestor(StaticEvent.Relation, containerEvent.EventValue.ValueID);
 
-            if (containerEvent.EventValue.ValueID != StaticEvent.Individual && !isAttr) {
+            if (containerEvent.EventValue.ValueID != StaticEvent.Individual && !isAttr && !isRelation) {
                 return null;
             }
 
@@ -356,8 +357,6 @@ namespace AuroraCore.Storage.Implementation {
         }
 
         public async Task<IEnumerable<IBoxedValue>> GetPropertyContainerAttribute(int containerID, int attributeID) {
-            await Task.Yield();
-
             var values =
                 from e in events
                 join subEvent in events
@@ -385,8 +384,6 @@ namespace AuroraCore.Storage.Implementation {
         }
 
         public async Task<IReadOnlyDictionary<int, IEnumerable<IBoxedValue>>> GetPropertyContainerAttributes(int containerID) {
-            await Task.Yield();
-
             var attributes =
                 from e in events
                 join subEvent in events
@@ -425,46 +422,50 @@ namespace AuroraCore.Storage.Implementation {
         }
 
         public async Task<IEnumerable<IBoxedValue>> GetPropertyContainerRelation(int containerID, int relationID) {
-            await Task.Yield();
-
             var values =
                 from e in events
                 join subEvent in events
                 on e.Value.ValueID
                 equals subEvent.Key
-                where e.Value.BaseEventID == containerID &&
+                where
+                    e.Value.BaseEventID == containerID &&
                     subEvent.Value.BaseEventID == StaticEvent.Relation &&
                     subEvent.Value.ValueID == StaticEvent.Individual &&
                     subEvent.Value.ID == relationID
-                select new BoxedValue(context, e.Value, subEvent.Value.Value);
+                select e.Value;
 
-            return values;
+            return await Task.WhenAll(values.Select(async e => {
+                var valueID = Int32.Parse(e.Value);
+                var valueEvent = await GetEvent(valueID);
+                return new BoxedValue(context, e, valueEvent.EventValue.Value);
+            }));
         }
 
         public async Task<IReadOnlyDictionary<int, IEnumerable<IBoxedValue>>> GetPropertyContainerRelations(int containerID) {
-            await Task.Yield();
-
             var relations =
                 from e in events
                 join subEvent in events
                 on e.Value.ValueID
                 equals subEvent.Key
-                where e.Value.BaseEventID == containerID &&
+                where
+                    e.Value.BaseEventID == containerID &&
                     subEvent.Value.BaseEventID == StaticEvent.Relation &&
                     subEvent.Value.ValueID == StaticEvent.Individual
                 select new {
                     ID = subEvent.Value.ID,
-                    Value = new BoxedValue(context, e.Value, subEvent.Value.Value)
+                    Event = e.Value
                 };
 
             var result = new Dictionary<int, IEnumerable<IBoxedValue>>();
-            foreach (var relation in relations) {
-                if (!result.ContainsKey(relation.ID)) {
-                    result.Add(relation.ID, new List<IBoxedValue>());
+            foreach (var data in relations) {
+                if (!result.ContainsKey(data.ID)) {
+                    result.Add(data.ID, new List<IBoxedValue>());
                 }
 
-                var list = (List<IBoxedValue>)result[relation.ID];
-                list.Add(relation.Value);
+                var list = (List<IBoxedValue>)result[data.ID];
+                var valueID = Int32.Parse(data.Event.Value);
+                var valueEvent = await GetEvent(valueID);
+                list.Add(new BoxedValue(context, data.Event, valueEvent.EventValue.Value));
             }
 
             return result;
