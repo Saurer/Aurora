@@ -317,13 +317,14 @@ namespace AuroraCore.Controllers {
                 if (existingRelation != null) {
                     throw new Exception($"Provider '{e.BaseEventID}' already has relation '{relationID}'");
                 }
-            }
-            else if (baseEvent.EventValue.ValueID == StaticEvent.Individual) {
-                var individual = await Storage.GetIndividual(baseEvent.EventValue.ID);
-                if (null == individual) {
-                    throw new Exception("Individual " + baseEvent.EventValue.ID + " does not exist");
-                }
 
+                return Effect.Pass;
+            }
+
+            var container = await Storage.GetPropertyContainer(e.BaseEventID);
+            var provider = await Storage.GetContainerPropertyProvider(e.BaseEventID);
+
+            if (null != provider && null != container) {
                 var relation = await Storage.GetRelation(e.ValueID);
 
                 if (null == relation) {
@@ -338,25 +339,24 @@ namespace AuroraCore.Controllers {
                     }
                 }
                 else {
-                    throw new Exception($"Invalid attribute value ID: '{e.Value}', expected number");
+                    throw new Exception($"Invalid relation value ID: '{e.Value}', expected number");
                 }
 
-                var model = await individual.GetModel();
-                var property = await model.Properties.GetRelation(e.ValueID);
+                var property = await provider.GetRelation(e.ValueID);
                 var cardinality = await property.GetCardinality();
 
                 if (cardinality != 0) {
-                    var values = await individual.Properties.GetRelation(relation.PropertyID);
+                    var values = await container.GetRelation(relation.PropertyID);
                     if (cardinality <= values.Count()) {
                         throw new Exception($"Cardinality violation, relation '{relation.PropertyID}' already hax maximum number of values");
                     }
                 }
+
+                return new TagContainerEffect(e.ID, property.AttachmentID);
             }
             else {
-                throw new Exception("Relation can be added only to a model or an individual");
+                throw new Exception($"Event '{e.BaseEventID}' has no attached property provider");
             }
-
-            return Effect.Pass;
         }
     }
 }
