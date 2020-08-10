@@ -5,6 +5,7 @@ namespace AuroraCore.Storage {
         int AttachmentID { get; }
         int ProviderID { get; }
         int PropertyID { get; }
+        IPropertyProvider Properties { get; }
 
         Task<T> GetProperty();
         Task<bool> IsRequired();

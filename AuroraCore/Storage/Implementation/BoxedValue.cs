@@ -1,10 +1,10 @@
 namespace AuroraCore.Storage.Implementation {
-    internal class BoxedValue : IBoxedValue {
-        public string PlainValue { get; private set; }
+    internal class BoxedValue : Event, IBoxedValue {
+        public int AssignationID => EventValue.ID;
+        public string PlainValue => EventValue.Value;
         public string ShownValue { get; private set; }
 
-        public BoxedValue(string plainValue, string shownValue) {
-            PlainValue = plainValue;
+        public BoxedValue(IDataContext context, IEventData e, string shownValue) : base(context, e) {
             ShownValue = shownValue;
         }
     }

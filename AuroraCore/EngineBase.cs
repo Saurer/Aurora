@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using AuroraCore.Controllers;
+using AuroraCore.Effects;
 using AuroraCore.Networking;
 using AuroraCore.Storage;
 
@@ -10,7 +11,7 @@ namespace AuroraCore {
     public class EngineBase {
         private IStorageAdapter storage;
         private List<Controller> controllers = new List<Controller>();
-        private Dictionary<int, List<Func<IEventData, Task>>> reactions = new Dictionary<int, List<Func<IEventData, Task>>>();
+        private Dictionary<int, List<Func<IEventData, Task<Effect>>>> reactions = new Dictionary<int, List<Func<IEventData, Task<Effect>>>>();
         private NetworkManager netMon;
 
         public IStorageAPI Storage {
@@ -27,20 +28,19 @@ namespace AuroraCore {
             AddController<EventController>();
         }
 
-        public void AddReaction(int eventID, Func<IEventData, Task> reaction) {
+        public void AddReaction(int eventID, Func<IEventData, Task<Effect>> reaction) {
             if (!reactions.ContainsKey(eventID)) {
-                reactions[eventID] = new List<Func<IEventData, Task>>();
+                reactions[eventID] = new List<Func<IEventData, Task<Effect>>>();
             }
 
             reactions[eventID].Add(reaction);
         }
 
-        public async Task<IEnumerable<Func<IEventData, Task>>> GetReactionsFor(IEventData e) {
-            var result = new List<Func<IEventData, Task>>();
+        public async Task<IEnumerable<Func<IEventData, Task<Effect>>>> GetReactionsFor(IEventData e) {
+            var result = new List<Func<IEventData, Task<Effect>>>();
 
             foreach (var reaction in reactions) {
-                // TODO: It is possible to cache 
-                var isAncestor = await Storage.IsEventAncestor(reaction.Key, e.ValueID);
+                var isAncestor = await storage.IsEventAncestor(reaction.Key, e.ValueID);
                 if (isAncestor) {
                     foreach (var item in reaction.Value) {
                         result.Add(item);
@@ -60,11 +60,11 @@ namespace AuroraCore {
             IEnumerable<ReactionBase> reactions = controller.GetReactions();
 
             foreach (var reaction in reactions) {
-                AddReaction(reaction.EventID, async (e) => {
-                    await (Task)reaction.Method.Invoke(controller, new[] {
+                AddReaction(reaction.EventID, async (e) =>
+                    await (Task<Effect>)reaction.Method.Invoke(controller, new[] {
                         e
-                    });
-                });
+                    })
+                );
             }
             controllers.Add(controller);
         }
@@ -79,11 +79,29 @@ namespace AuroraCore {
             }
 
             var reactions = await GetReactionsFor(e);
-            foreach (var handler in reactions) {
-                await handler(e);
+            var queue = new Queue<Effect>();
+
+            try {
+                foreach (var handler in reactions) {
+                    var effect = await handler(e);
+                    queue.Enqueue(effect);
+                }
+            }
+            catch (Exception exception) {
+                throw new Exception("Error playing event", exception);
             }
 
-#warning TODO: Catch exceptions
+
+            try {
+                while (queue.Count > 0) {
+                    var effect = queue.Dequeue();
+                    await effect.Execute(storage);
+                }
+            }
+            catch (Exception exception) {
+                throw new Exception("Fatal error running effect", exception);
+            }
+
             await storage.AddEvent(e);
             Position++;
         }

@@ -8,9 +8,11 @@ namespace AuroraCore.Storage.Implementation {
         public int AttachmentID => EventValue.ID;
         public int ProviderID => EventValue.BaseEventID;
         public int PropertyID => propertyID;
+        public IPropertyProvider Properties { get; private set; }
 
         public AttachedProperty(IDataContext context, IEventData e) : base(context, e) {
             propertyID = Int32.Parse(e.Value);
+            Properties = new PropertyProvider(context, AttachmentID);
         }
 
         public async Task<T> GetProperty() {

@@ -42,6 +42,8 @@ namespace AuroraCore.Storage {
         #endregion
 
         #region Property container
+        Task<IPropertyContainer> GetPropertyContainer(int containerID);
+        Task<IPropertyProvider> GetContainerPropertyProvider(int containerID);
         Task<IEnumerable<IBoxedValue>> GetPropertyContainerAttribute(int containerID, int attributeID);
         Task<IReadOnlyDictionary<int, IEnumerable<IBoxedValue>>> GetPropertyContainerAttributes(int containerID);
         Task<IEnumerable<IBoxedValue>> GetPropertyContainerRelation(int containerID, int relationID);
@@ -72,7 +74,6 @@ namespace AuroraCore.Storage {
         #endregion
 
         #region Other
-        Task<bool> IsEventAncestor(int ancestor, int checkValue);
         Task<IIndividual> GetDataTypeIndividual(string name);
         DataType GetDataType(string name);
         #endregion

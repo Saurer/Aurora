@@ -1,12 +1,13 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AuroraCore.Effects;
 using AuroraCore.Storage;
 
 namespace AuroraCore.Controllers {
     public class EventController : Controller {
         [EventReaction(StaticEvent.Event)]
-        public async Task Event(IEventData e) {
+        public async Task<Effect> Event(IEventData e) {
             var existingEvent = await Storage.GetEvent(e.ID);
             if (null != existingEvent) {
                 throw new Exception($"Event '{e.ID}' already exists");
@@ -27,19 +28,23 @@ namespace AuroraCore.Controllers {
             if (0 != e.ID && null == conditionEvent) {
                 throw new Exception($"Event '{e.ConditionEventID}' does not exist");
             }
+
+            return Effect.Pass;
         }
 
         [EventReaction(StaticEvent.SubEvent)]
-        public async Task SubEvent(IEventData e) {
+        public async Task<Effect> SubEvent(IEventData e) {
             IEvent parent = await Storage.GetEvent(e.BaseEventID);
 
             if (null == parent) {
                 throw new Exception($"Event '{e.BaseEventID}' does not exist");
             }
+
+            return new TagSubEventEffect(e.BaseEventID, e.ID);
         }
 
         [EventReaction(StaticEvent.AttributeConstraint)]
-        public async Task AttributeProperty(IEventData e) {
+        public async Task<Effect> AttributeProperty(IEventData e) {
             IEvent parent = await Storage.GetEvent(e.BaseEventID);
             if (null == parent) {
                 throw new Exception($"Base event {e.BaseEventID} does not exist");
@@ -80,10 +85,12 @@ namespace AuroraCore.Controllers {
             else {
                 throw new Exception("Illegal operation");
             }
+
+            return Effect.Pass;
         }
 
         [EventReaction(StaticEvent.Model)]
-        public async Task Model(IEventData e) {
+        public async Task<Effect> Model(IEventData e) {
             var parent = await Storage.GetEvent(e.ConditionEventID);
             if (null == parent) {
                 throw new Exception($"Event '{e.ConditionEventID}' does not exist");
@@ -97,13 +104,15 @@ namespace AuroraCore.Controllers {
             if (e.ConditionEventID != StaticEvent.Event && null == parentModel) {
                 throw new Exception("Model " + e.ConditionEventID + " does not exist");
             }
+
+            return Effect.Pass;
         }
 
         [EventReaction(StaticEvent.Attribute)]
-        public async Task Attribute(IEventData e) {
+        public async Task<Effect> Attribute(IEventData e) {
             IEvent baseEvent = await Storage.GetEvent(e.BaseEventID);
 
-            if (baseEvent.EventValue.ValueID == StaticEvent.Model) {
+            if (e.ValueID == StaticEvent.Attribute) {
                 int attrID;
 
                 if (!Int32.TryParse(e.Value, out attrID)) {
@@ -115,22 +124,18 @@ namespace AuroraCore.Controllers {
                     throw new Exception("Attribute " + attrID + " does not exist");
                 }
 
-                var model = await Storage.GetModel(e.BaseEventID);
-                if (null == model) {
-                    throw new Exception("Model " + e.BaseEventID + " does not exist");
-                }
-
-                var existingAttr = await model.Properties.GetAttribute(attrID);
+                var existingAttr = await Storage.GetPropertyProviderAttribute(e.BaseEventID, attrID);
                 if (existingAttr != null) {
-                    throw new Exception($"Model '{model.ModelID}' already has attribute '{attrID}'");
-                }
-            }
-            else if (baseEvent.EventValue.ValueID == StaticEvent.Individual) {
-                var individual = await Storage.GetIndividual(baseEvent.EventValue.ID);
-                if (null == individual) {
-                    throw new Exception("Individual " + baseEvent.EventValue.ID + " does not exist");
+                    throw new Exception($"Provider '{e.BaseEventID}' already has attribute '{attrID}'");
                 }
 
+                return Effect.Pass;
+            }
+
+            var container = await Storage.GetPropertyContainer(e.BaseEventID);
+            var provider = await Storage.GetContainerPropertyProvider(e.BaseEventID);
+
+            if (null != provider && null != container) {
                 var attribute = await Storage.GetAttribute(e.ValueID);
 
                 if (null == attribute) {
@@ -157,24 +162,25 @@ namespace AuroraCore.Controllers {
                     }
                 }
 
-                var model = await individual.GetModel();
-                var property = await model.Properties.GetAttribute(e.ValueID);
+                var property = await provider.GetAttribute(e.ValueID);
                 var cardinality = await property.GetCardinality();
 
                 if (cardinality != 0) {
-                    var values = await individual.Properties.GetAttribute(attribute.PropertyID);
+                    var values = await container.GetAttribute(attribute.PropertyID);
                     if (cardinality <= values.Count()) {
                         throw new Exception($"Cardinality violation, attribute '{attribute.PropertyID}' already hax maximum number of values");
                     }
                 }
+
+                return new TagContainerEffect(e.ID, property.AttachmentID);
             }
             else {
-                throw new Exception("Attribute can be added only to a model or an individual");
+                throw new Exception($"Event '{e.BaseEventID}' has no attached property provider");
             }
         }
 
         [EventReaction(StaticEvent.Individual)]
-        public async Task Individual(IEventData e) {
+        public async Task<Effect> Individual(IEventData e) {
             var parentEvent = await Storage.GetEvent(e.BaseEventID);
             if (null == parentEvent) {
                 throw new Exception($"Event '{e.BaseEventID}' does not exist");
@@ -208,10 +214,15 @@ namespace AuroraCore.Controllers {
                     }
                     break;
             }
+
+            return new MultipleEffect(
+                new TagSubEventEffect(e.BaseEventID, e.ID),
+                new TagContainerEffect(e.ID, model.ModelID)
+            );
         }
 
         [EventReaction(StaticEvent.DataType)]
-        public async Task DataType(IEventData e) {
+        public async Task<Effect> DataType(IEventData e) {
             int typeID;
             if (!Int32.TryParse(e.Value, out typeID)) {
                 throw new Exception("Invalid DataType: " + e.Value);
@@ -226,10 +237,12 @@ namespace AuroraCore.Controllers {
             if (null == dataType) {
                 throw new Exception("Type '" + typeValue.Label + "' is not active");
             }
+
+            return Effect.Pass;
         }
 
         [EventReaction(StaticEvent.AttributeValue)]
-        public async Task AttributeValue(IEventData e) {
+        public async Task<Effect> AttributeValue(IEventData e) {
             var attr = await Storage.GetAttribute(e.BaseEventID);
 
             if (null == attr) {
@@ -240,10 +253,12 @@ namespace AuroraCore.Controllers {
             if (!dt.AllowsBoxedValue(e.Value)) {
                 throw new Exception($"Invalid value for attribute '{attr.Label}'");
             }
+
+            return Effect.Pass;
         }
 
         [EventReaction(StaticEvent.ValueProperty)]
-        public async Task ValueProperty(IEventData e) {
+        public async Task<Effect> ValueProperty(IEventData e) {
             var baseEvent = await Storage.GetEvent(e.BaseEventID);
 
             if (StaticEvent.Attribute == baseEvent.EventValue.ValueID) {
@@ -262,11 +277,6 @@ namespace AuroraCore.Controllers {
                 throw new Exception($"Invalid base event value: '{e.BaseEventID}'");
             }
 
-            var model = await Storage.GetModel(baseEvent.EventValue.BaseEventID);
-            if (null == model) {
-                throw new Exception($"Model '{baseEvent.EventValue.BaseEventID}' does not exist");
-            }
-
             switch (e.ValueID) {
                 case StaticEvent.Required:
                     if (e.Value != "1" && e.Value != "0") {
@@ -283,13 +293,15 @@ namespace AuroraCore.Controllers {
                 default:
                     throw new Exception($"Unhandled value property type: '{e.ValueID}'");
             }
+
+            return Effect.Pass;
         }
 
         [EventReaction(StaticEvent.Relation)]
-        public async Task Relation(IEventData e) {
+        public async Task<Effect> Relation(IEventData e) {
             IEvent baseEvent = await Storage.GetEvent(e.BaseEventID);
 
-            if (baseEvent.EventValue.ValueID == StaticEvent.Model) {
+            if (e.ValueID == StaticEvent.Relation) {
                 int relationID;
 
                 if (!Int32.TryParse(e.Value, out relationID)) {
@@ -301,14 +313,9 @@ namespace AuroraCore.Controllers {
                     throw new Exception("Relation " + relationID + " does not exist");
                 }
 
-                var model = await Storage.GetModel(e.BaseEventID);
-                if (null == model) {
-                    throw new Exception("Model " + e.BaseEventID + " does not exist");
-                }
-
-                var existingRelation = await model.Properties.GetRelation(relationID);
+                var existingRelation = await Storage.GetPropertyProviderRelation(e.BaseEventID, relationID);
                 if (existingRelation != null) {
-                    throw new Exception($"Model '{model.ModelID}' already has relation '{relationID}'");
+                    throw new Exception($"Provider '{e.BaseEventID}' already has relation '{relationID}'");
                 }
             }
             else if (baseEvent.EventValue.ValueID == StaticEvent.Individual) {
@@ -348,6 +355,8 @@ namespace AuroraCore.Controllers {
             else {
                 throw new Exception("Relation can be added only to a model or an individual");
             }
+
+            return Effect.Pass;
         }
     }
 }
