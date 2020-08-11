@@ -222,6 +222,16 @@ namespace AuroraCore.Storage.Implementation {
         #endregion
 
         #region Property provider
+        public async Task<IPropertyProvider> GetPropertyProvider(int providerID) {
+            var model = await GetModel(providerID);
+            if (null == model) {
+                return new PropertyProvider(context, providerID);
+            }
+            else {
+                return new ModelPropertyProvider(context, model);
+            }
+        }
+
         public async Task<IAttachedProperty<IAttr>> GetPropertyProviderAttribute(int providerID, int attrID) {
             await Task.Yield();
 

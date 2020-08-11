@@ -33,6 +33,7 @@ namespace AuroraCore.Storage {
         #endregion
 
         #region Property provider
+        Task<IPropertyProvider> GetPropertyProvider(int providerID);
         Task<IAttachedProperty<IAttr>> GetPropertyProviderAttribute(int providerID, int attrID);
         Task<IEnumerable<IAttachedProperty<IAttr>>> GetPropertyProviderAttributes(int providerID);
         Task<IAttachedProperty<IRelation>> GetPropertyProviderRelation(int providerID, int relationID);
