@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using AuroraCore;
 
 namespace Aurora {
@@ -11,7 +12,7 @@ namespace Aurora {
             SubEvent(StaticEvent.Entity, StaticEvent.Event, "Entity", StaticEvent.Event),
             SubEvent(StaticEvent.Relation, StaticEvent.Event, "Relation", StaticEvent.Event),
             SubEvent(StaticEvent.Attribute, StaticEvent.Event, "Attribute", StaticEvent.Event),
-            SubEvent(StaticEvent.AttributeConstraint, StaticEvent.Event, "AttributeProperty", StaticEvent.Event),
+            SubEvent(StaticEvent.AttributeConstraint, StaticEvent.Event, "AttributeConstraint", StaticEvent.Event),
             SubEvent(StaticEvent.Model, StaticEvent.Event, "Model", StaticEvent.Event),
             SubEvent(StaticEvent.Individual, StaticEvent.Event, "Individual", StaticEvent.Event),
             SubEvent(StaticEvent.Role, StaticEvent.Event, "Role", StaticEvent.Event),
@@ -22,6 +23,7 @@ namespace Aurora {
 
             SubEvent(StaticEvent.Cardinality, StaticEvent.ValueProperty, "Cardinality", StaticEvent.ValueProperty),
             SubEvent(StaticEvent.Required, StaticEvent.ValueProperty, "Required", StaticEvent.ValueProperty),
+            SubEvent(StaticEvent.Permission, StaticEvent.ValueProperty, "Permission", StaticEvent.ValueProperty),
 
             Model(StaticEvent.EventModel, StaticEvent.Event, "Model_Event", StaticEvent.Event),
             Model(StaticEvent.EntityModel, StaticEvent.Entity, "Model_Entity", StaticEvent.EventModel),
@@ -42,7 +44,7 @@ namespace Aurora {
 
             Individual(21, StaticEvent.Actor, "Actor_Main", StaticEvent.ActorModel),
             IndividualAttribute(22, 21, 17, "Main Actor"),
-        };
+        }.OrderBy(e => e.ID);
 
         private static EventData SubEvent(int id, int baseEventID, string value, int conditionEventID) =>
             new EventData(id, baseEventID, StaticEvent.SubEvent, conditionEventID, StaticEvent.Event, value);

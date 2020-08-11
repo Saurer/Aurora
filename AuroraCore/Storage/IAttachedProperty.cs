@@ -10,5 +10,6 @@ namespace AuroraCore.Storage {
         Task<T> GetProperty();
         Task<bool> IsRequired();
         Task<int> GetCardinality();
+        Task<int?> GetPermission();
     }
 }

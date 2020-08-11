@@ -48,5 +48,15 @@ namespace AuroraCore.Storage.Implementation {
                 return Int32.Parse(constraint.EventValue.Value);
             }
         }
+
+        public async Task<int?> GetPermission() {
+            var constraint = await Context.Storage.GetPropertyProviderValueConstraint(ProviderID, PropertyID, StaticEvent.Permission);
+            if (null == constraint) {
+                return null;
+            }
+            else {
+                return Int32.Parse(constraint.EventValue.Value);
+            }
+        }
     }
 }

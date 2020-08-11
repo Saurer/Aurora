@@ -172,6 +172,11 @@ namespace AuroraCore.Controllers {
                     }
                 }
 
+                var permission = await property.GetPermission();
+                if (permission.HasValue && permission.Value != e.ActorEventID) {
+                    throw new Exception($"Permission violation, write access for attribute '{attribute.PropertyID}' is denied for this actor");
+                }
+
                 return new TagContainerEffect(e.ID, property.AttachmentID);
             }
             else {
@@ -290,6 +295,17 @@ namespace AuroraCore.Controllers {
                     }
                     break;
 
+                case StaticEvent.Permission:
+                    if (!Int32.TryParse(e.Value, out intValue) || intValue < 0) {
+                        throw new Exception($"Invalid value property value of type '{e.ValueID}': '{e.Value}'");
+                    }
+
+                    var permissionActor = await Storage.GetActor(intValue);
+                    if (null == permissionActor) {
+                        throw new Exception($"Invalid value property value of type '{e.ValueID}': '{e.Value}'");
+                    }
+                    break;
+
                 default:
                     throw new Exception($"Unhandled value property type: '{e.ValueID}'");
             }
@@ -350,6 +366,11 @@ namespace AuroraCore.Controllers {
                     if (cardinality <= values.Count()) {
                         throw new Exception($"Cardinality violation, relation '{relation.PropertyID}' already hax maximum number of values");
                     }
+                }
+
+                var permission = await property.GetPermission();
+                if (permission.HasValue && permission.Value != e.ActorEventID) {
+                    throw new Exception($"Permission violation, write access for relation '{property.PropertyID}' is denied for this actor");
                 }
 
                 return new TagContainerEffect(e.ID, property.AttachmentID);
