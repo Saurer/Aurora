@@ -42,6 +42,11 @@ namespace Aurora {
             DataType(18, 17, 14),
             ModelAttribute(19, StaticEvent.EventModel, 17),
 
+            Individual(StaticEvent.Delete, StaticEvent.Attribute, "Delete", StaticEvent.AttributeModel),
+            DataType(32, StaticEvent.Delete, 25),
+            AttributeValue(StaticEvent.DeleteTrue, StaticEvent.Delete, "1"),
+            AttributeValue(StaticEvent.DeleteFalse, StaticEvent.Delete, "0"),
+
             Individual(21, StaticEvent.Actor, "Actor_Main", StaticEvent.ActorModel),
             IndividualAttribute(22, 21, 17, "Main Actor"),
         }.OrderBy(e => e.ID);
@@ -66,5 +71,8 @@ namespace Aurora {
 
         private static EventData IndividualAttribute(int id, int individualID, int attributeID, string value) =>
             new EventData(id, individualID, attributeID, individualID, StaticEvent.Event, value);
+
+        private static EventData AttributeValue(int id, int attributeID, string value) =>
+            new EventData(id, attributeID, StaticEvent.AttributeValue, attributeID, StaticEvent.Event, value);
     }
 }
