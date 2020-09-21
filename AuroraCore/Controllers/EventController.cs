@@ -24,9 +24,16 @@ namespace AuroraCore.Controllers {
                 throw new Exception($"Event '{e.ValueID}' does not exist");
             }
 
-            var conditionEvent = await Storage.GetEvent(e.ConditionEventID);
-            if (0 != e.ID && null == conditionEvent) {
-                throw new Exception($"Event '{e.ConditionEventID}' does not exist");
+            foreach (var condition in e.Conditions) {
+                if (condition is ConditionRule.EventConditionRule eventCondition) {
+                    var conditionEvent = await Storage.GetEvent(eventCondition.EventID);
+                    if (0 != e.ID && null == conditionEvent) {
+                        throw new Exception($"Event '{eventCondition.EventID}' does not exist");
+                    }
+                }
+                else {
+                    throw new Exception($"Unhandled condition rule type: '{condition.GetType()}'");
+                }
             }
 
             return Effect.Pass;
@@ -91,9 +98,15 @@ namespace AuroraCore.Controllers {
 
         [EventReaction(StaticEvent.Model)]
         public async Task<Effect> Model(IEventData e) {
-            var parent = await Storage.GetEvent(e.ConditionEventID);
+            var eventCondition = new ConditionsContainer(e.Conditions).TryGetEvent();
+
+            if (null == eventCondition) {
+                throw new Exception($"Model does not have a parent");
+            }
+
+            var parent = await Storage.GetEvent(eventCondition.EventID);
             if (null == parent) {
-                throw new Exception($"Event '{e.ConditionEventID}' does not exist");
+                throw new Exception($"Event '{eventCondition.EventID}' does not exist");
             }
 
             if (parent.EventValue.ValueID != StaticEvent.Model && parent.EventValue.ValueID != StaticEvent.Event) {
@@ -101,8 +114,8 @@ namespace AuroraCore.Controllers {
             }
 
             var parentModel = await Storage.GetModel(parent.EventValue.ID);
-            if (e.ConditionEventID != StaticEvent.Event && null == parentModel) {
-                throw new Exception("Model " + e.ConditionEventID + " does not exist");
+            if (eventCondition.EventID != StaticEvent.Event && null == parentModel) {
+                throw new Exception("Model " + eventCondition.EventID + " does not exist");
             }
 
             return Effect.Pass;
@@ -191,9 +204,15 @@ namespace AuroraCore.Controllers {
                 throw new Exception($"Event '{e.BaseEventID}' does not exist");
             }
 
-            var model = await Storage.GetModel(e.ConditionEventID);
+            var conditionEvent = new ConditionsContainer(e.Conditions).TryGetEvent();
+
+            if (null == conditionEvent) {
+                throw new Exception("Individual does not have a model");
+            }
+
+            var model = await Storage.GetModel(conditionEvent.EventID);
             if (null == model) {
-                throw new Exception("Model " + e.ConditionEventID + " does not exist");
+                throw new Exception("Model " + conditionEvent.EventID + " does not exist");
             }
 
             if (e.BaseEventID == StaticEvent.DataType) {

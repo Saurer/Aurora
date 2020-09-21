@@ -4,7 +4,12 @@ namespace AuroraCore.Storage.Implementation {
     internal class Model : Event, IModel {
         public int ModelID => EventValue.ID;
         public int BaseEventID => EventValue.BaseEventID;
-        public int ParentModelID => EventValue.ConditionEventID;
+        public int ParentModelID {
+            get {
+                var eventCondition = Conditions.TryGetEvent();
+                return eventCondition.EventID;
+            }
+        }
         public string Label => EventValue.Value;
         public IPropertyProvider Properties { get; private set; }
 
