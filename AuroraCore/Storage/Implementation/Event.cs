@@ -7,24 +7,24 @@ namespace AuroraCore.Storage.Implementation {
 
         public IEventData EventValue { get; private set; }
         public DateTime Date => EventValue.Date;
-        public ConditionsContainer Conditions { get; private set; }
+        public ConditionRule Conditions { get; private set; }
 
         public Event(IDataContext context, IEventData e) {
             Context = context;
             EventValue = e;
-            Conditions = new ConditionsContainer(e.Conditions);
+            Conditions = e.Conditions;
         }
 
         public async Task<IIndividual> GetCreator() =>
             await Context.Storage.GetActor(EventValue.ActorEventID);
 
         public async Task<IEvent> GetConditionEvent() {
-            var eventCondition = Conditions.TryGetEvent();
-            if (null == eventCondition) {
+            if (Conditions is ConditionRule.EventConditionRule eventCondition) {
+                return await Context.Storage.GetEvent(eventCondition.EventID);
+            }
+            else {
                 return null;
             }
-
-            return await Context.Storage.GetEvent(eventCondition.EventID);
         }
 
         public async Task<IEvent> GetBaseEvent() =>

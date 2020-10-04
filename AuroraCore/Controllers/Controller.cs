@@ -27,5 +27,29 @@ namespace AuroraCore.Controllers {
 
             yield break;
         }
+
+        protected bool TryGetCondition<T>(IEventData e, out T value) where T : ConditionRule {
+            if (e.Conditions is T) {
+                value = e.Conditions as T;
+                return true;
+            }
+            else {
+                value = null;
+                return false;
+            }
+        }
+
+        protected IEnumerable<ConditionRule> TraverseConditions(ConditionRule stack) {
+            if (stack is ConditionRule.ComplexConditionRule complex) {
+                foreach (var rule in complex.Values) {
+                    foreach (var subRule in TraverseConditions(rule)) {
+                        yield return subRule;
+                    }
+                }
+            }
+            else {
+                yield return stack;
+            }
+        }
     }
 }

@@ -5,7 +5,7 @@ namespace AuroraCore.Storage {
     public interface IEvent {
         IEventData EventValue { get; }
         DateTime Date { get; }
-        ConditionsContainer Conditions { get; }
+        ConditionRule Conditions { get; }
         Task<IIndividual> GetCreator();
         Task<IEvent> GetConditionEvent();
         Task<IEvent> GetBaseEvent();

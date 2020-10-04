@@ -6,8 +6,7 @@ namespace AuroraCore.Storage.Implementation {
         public int BaseEventID => EventValue.BaseEventID;
         public int ParentModelID {
             get {
-                var eventCondition = Conditions.TryGetEvent();
-                return eventCondition.EventID;
+                return (Conditions as ConditionRule.EventConditionRule).EventID;
             }
         }
         public string Label => EventValue.Value;

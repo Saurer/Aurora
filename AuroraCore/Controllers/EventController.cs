@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AuroraCore.Effects;
 using AuroraCore.Storage;
+using static AuroraCore.Storage.ConditionRule;
 
 namespace AuroraCore.Controllers {
     public class EventController : Controller {
@@ -24,12 +25,15 @@ namespace AuroraCore.Controllers {
                 throw new Exception($"Event '{e.ValueID}' does not exist");
             }
 
-            foreach (var condition in e.Conditions) {
+            foreach (var condition in TraverseConditions(e.Conditions)) {
                 if (condition is ConditionRule.EventConditionRule eventCondition) {
                     var conditionEvent = await Storage.GetEvent(eventCondition.EventID);
                     if (0 != e.ID && null == conditionEvent) {
                         throw new Exception($"Event '{eventCondition.EventID}' does not exist");
                     }
+                }
+                else if (condition is ConditionRule.PropertyEqualityRule || condition is ConditionRule.PropertyInequalityRule) {
+                    continue;
                 }
                 else {
                     throw new Exception($"Unhandled condition rule type: '{condition.GetType()}'");
@@ -98,9 +102,8 @@ namespace AuroraCore.Controllers {
 
         [EventReaction(StaticEvent.Model)]
         public async Task<Effect> Model(IEventData e) {
-            var eventCondition = new ConditionsContainer(e.Conditions).TryGetEvent();
-
-            if (null == eventCondition) {
+            EventConditionRule eventCondition = null;
+            if (!TryGetCondition<ConditionRule.EventConditionRule>(e, out eventCondition)) {
                 throw new Exception($"Model does not have a parent");
             }
 
@@ -204,9 +207,9 @@ namespace AuroraCore.Controllers {
                 throw new Exception($"Event '{e.BaseEventID}' does not exist");
             }
 
-            var conditionEvent = new ConditionsContainer(e.Conditions).TryGetEvent();
 
-            if (null == conditionEvent) {
+            EventConditionRule conditionEvent = null;
+            if (!TryGetCondition<ConditionRule.EventConditionRule>(e, out conditionEvent)) {
                 throw new Exception("Individual does not have a model");
             }
 
