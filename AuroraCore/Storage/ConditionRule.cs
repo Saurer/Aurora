@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace AuroraCore.Storage {
     public abstract class ConditionRule {
         public class EventConditionRule : ConditionRule {
-            public int EventID { get; private set; }
+            public int EventID { get; set; }
 
             public EventConditionRule() {
 
@@ -16,7 +16,7 @@ namespace AuroraCore.Storage {
         }
 
         public abstract class ComplexConditionRule : ConditionRule {
-            public List<ConditionRule> Values { get; private set; }
+            public List<ConditionRule> Values { get; set; }
 
             public ComplexConditionRule(IEnumerable<ConditionRule> values) {
                 Values = new List<ConditionRule>(values);
@@ -38,8 +38,8 @@ namespace AuroraCore.Storage {
         }
 
         public abstract class PropertyValueRule : ConditionRule {
-            public int PropertyID { get; private set; }
-            public string Value { get; private set; }
+            public int PropertyID { get; set; }
+            public string Value { get; set; }
 
             public PropertyValueRule(int propertyID, string value) {
                 PropertyID = propertyID;
