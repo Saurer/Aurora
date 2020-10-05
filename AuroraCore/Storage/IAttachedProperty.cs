@@ -11,5 +11,6 @@ namespace AuroraCore.Storage {
         Task<bool> IsRequired();
         Task<int> GetCardinality();
         Task<int?> GetPermission();
+        Task<string> GetDefaultValue();
     }
 }

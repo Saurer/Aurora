@@ -25,8 +25,9 @@ namespace AuroraCore {
         public const int Cardinality = 28;
         public const int Required = 29;
         public const int Permission = 30;
-        public const int Delete = 31;
-        public const int DeleteTrue = 33;
-        public const int DeleteFalse = 34;
+        public const int Set = 31;
+        // public const int Delete = 31;
+        // public const int DeleteTrue = 33;
+        // public const int DeleteFalse = 34;
     }
 }

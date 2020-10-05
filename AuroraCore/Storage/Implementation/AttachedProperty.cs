@@ -58,5 +58,10 @@ namespace AuroraCore.Storage.Implementation {
                 return Int32.Parse(constraint.EventValue.Value);
             }
         }
+
+        public async Task<string> GetDefaultValue() {
+            var constraint = await Context.Storage.GetPropertyProviderValueConstraint(ProviderID, PropertyID, StaticEvent.Set);
+            return constraint?.EventValue.Value;
+        }
     }
 }

@@ -328,6 +328,24 @@ namespace AuroraCore.Controllers {
                     }
                     break;
 
+                case StaticEvent.Set:
+                    if (StaticEvent.Attribute == baseEvent.EventValue.ValueID) {
+                        var attr = await Storage.GetAttribute(Int32.Parse(baseEvent.EventValue.Value));
+                        var boxed = await attr.IsBoxed();
+
+                        if (boxed) {
+                            var candidates = await attr.GetValueCandidates();
+                            if (!Int32.TryParse(e.Value, out intValue)) {
+                                throw new Exception($"Invalid value property value of type '{e.ValueID}: '{e.Value}'");
+                            }
+
+                            if (!candidates.Any(l => l.EventValue.ID == intValue)) {
+                                throw new Exception($"Invalid value property value of type '{e.ValueID}: '{e.Value}'");
+                            }
+                        }
+                    }
+                    break;
+
                 default:
                     throw new Exception($"Unhandled value property type: '{e.ValueID}'");
             }
