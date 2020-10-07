@@ -379,7 +379,14 @@ namespace AuroraCore.Storage.Implementation {
                     subEvent.Value.ID == attributeID
                 select e.Value;
 
+            var provider = await GetContainerPropertyProvider(containerID);
+            var attachment = await provider.GetAttribute(attributeID);
             var attr = await GetAttribute(attributeID);
+            var mutable = await attachment.GetMutability();
+            if (mutable) {
+                values = values.OrderByDescending(v => v.Date).Take(1);
+            }
+
             var boxed = await attr.IsBoxed();
             if (boxed) {
                 return await Task.WhenAll(values.Select(async e => {
@@ -408,24 +415,28 @@ namespace AuroraCore.Storage.Implementation {
                     Event = e.Value
                 };
 
+            var properties = attributes.GroupBy(l => l.ID, l => l.Event).ToDictionary(k => k.Key, v => v.ToList());
             var result = new Dictionary<int, IEnumerable<IBoxedValue>>();
-            foreach (var data in attributes) {
-                if (!result.ContainsKey(data.ID)) {
-                    result.Add(data.ID, new List<IBoxedValue>());
-                }
 
-                var attr = await GetAttribute(data.ID);
+            foreach (var kv in properties) {
+                var provider = await GetContainerPropertyProvider(containerID);
+                var attachment = await provider.GetAttribute(kv.Key);
+                var attr = await GetAttribute(kv.Key);
+                var mutable = await attachment.GetMutability();
+                var values = mutable ? kv.Value.OrderByDescending(v => v.Date).Take(1) : kv.Value;
                 var boxed = await attr.IsBoxed();
-                var list = (List<IBoxedValue>)result[data.ID];
 
-                if (boxed) {
-                    var valueID = Int32.Parse(data.Event.Value);
-                    var valueEvent = await GetEvent(valueID);
-                    list.Add(new BoxedValue(context, data.Event, valueEvent.EventValue.Value));
-                }
-                else {
-                    list.Add(new BoxedValue(context, data.Event, data.Event.Value));
-                }
+                var boxedValues = await Task.WhenAll(values.Select(async v => {
+                    if (boxed) {
+                        var valueID = Int32.Parse(v.Value);
+                        var valueEvent = await GetEvent(valueID);
+                        return new BoxedValue(context, v, valueEvent.EventValue.Value);
+                    }
+                    else {
+                        return new BoxedValue(context, v, v.Value);
+                    }
+                }));
+                result.Add(kv.Key, boxedValues);
             }
 
             return result;
@@ -443,6 +454,14 @@ namespace AuroraCore.Storage.Implementation {
                     subEvent.Value.ValueID == StaticEvent.Individual &&
                     subEvent.Value.ID == relationID
                 select e.Value;
+
+            var provider = await GetContainerPropertyProvider(containerID);
+            var attachment = await provider.GetRelation(relationID);
+            var relation = await GetRelation(relationID);
+            var mutable = await attachment.GetMutability();
+            if (mutable) {
+                values = values.OrderByDescending(v => v.Date).Take(1);
+            }
 
             return await Task.WhenAll(values.Select(async e => {
                 var valueID = Int32.Parse(e.Value);
@@ -466,16 +485,22 @@ namespace AuroraCore.Storage.Implementation {
                     Event = e.Value
                 };
 
+            var properties = relations.GroupBy(l => l.ID, l => l.Event).ToDictionary(k => k.Key, v => v.ToList());
             var result = new Dictionary<int, IEnumerable<IBoxedValue>>();
-            foreach (var data in relations) {
-                if (!result.ContainsKey(data.ID)) {
-                    result.Add(data.ID, new List<IBoxedValue>());
-                }
 
-                var list = (List<IBoxedValue>)result[data.ID];
-                var valueID = Int32.Parse(data.Event.Value);
-                var valueEvent = await GetEvent(valueID);
-                list.Add(new BoxedValue(context, data.Event, valueEvent.EventValue.Value));
+            foreach (var kv in properties) {
+                var provider = await GetContainerPropertyProvider(containerID);
+                var attachment = await provider.GetRelation(kv.Key);
+                var relation = await GetRelation(kv.Key);
+                var mutable = await attachment.GetMutability();
+                var values = mutable ? kv.Value.OrderByDescending(v => v.Date).Take(1) : kv.Value;
+
+                var boxedValues = await Task.WhenAll(values.Select(async v => {
+                    var valueID = Int32.Parse(v.Value);
+                    var valueEvent = await GetEvent(valueID);
+                    return new BoxedValue(context, v, valueEvent.EventValue.Value);
+                }));
+                result.Add(kv.Key, boxedValues);
             }
 
             return result;

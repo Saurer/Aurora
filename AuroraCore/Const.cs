@@ -3,5 +3,6 @@ namespace AuroraCore {
         public const string Version = "1.0.0";
         public const int DefaultCardinality = 1;
         public const bool DefaultRequired = false;
+        public const bool DefaultMutability = false;
     }
 }

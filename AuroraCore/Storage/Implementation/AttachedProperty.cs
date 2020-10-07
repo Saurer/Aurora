@@ -63,5 +63,15 @@ namespace AuroraCore.Storage.Implementation {
             var constraint = await Context.Storage.GetPropertyProviderValueConstraint(ProviderID, PropertyID, StaticEvent.Set);
             return constraint?.EventValue.Value;
         }
+
+        public async Task<bool> GetMutability() {
+            var constraint = await Context.Storage.GetPropertyProviderValueConstraint(ProviderID, PropertyID, StaticEvent.Mutable);
+            if (null == constraint) {
+                return Const.DefaultMutability;
+            }
+            else {
+                return "1" == constraint?.EventValue.Value;
+            }
+        }
     }
 }

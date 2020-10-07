@@ -180,11 +180,12 @@ namespace AuroraCore.Controllers {
 
                 var property = await provider.GetAttribute(e.ValueID);
                 var cardinality = await property.GetCardinality();
+                var mutable = await property.GetMutability();
 
-                if (cardinality != 0) {
+                if (!mutable && cardinality != 0) {
                     var values = await container.GetAttribute(attribute.PropertyID);
                     if (cardinality <= values.Count()) {
-                        throw new Exception($"Cardinality violation, attribute '{attribute.PropertyID}' already hax maximum number of values");
+                        throw new Exception($"Cardinality violation, attribute '{attribute.PropertyID}' already has maximum number of values");
                     }
                 }
 
@@ -346,6 +347,17 @@ namespace AuroraCore.Controllers {
                     }
                     break;
 
+                case StaticEvent.Mutable:
+                    var id = Int32.Parse(baseEvent.EventValue.Value);
+                    var cardinalityEvent = await Storage.GetPropertyProviderValueConstraint(e.BaseEventID, id, StaticEvent.Cardinality);
+                    if (
+                        (null == cardinalityEvent && Const.DefaultCardinality != 1) ||
+                        (null != cardinalityEvent && cardinalityEvent.EventValue.Value != "1")
+                    ) {
+                        throw new Exception($"Property can not be set mutable when cardinality is not set to 1");
+                    }
+                    break;
+
                 default:
                     throw new Exception($"Unhandled value property type: '{e.ValueID}'");
             }
@@ -400,11 +412,12 @@ namespace AuroraCore.Controllers {
 
                 var property = await provider.GetRelation(e.ValueID);
                 var cardinality = await property.GetCardinality();
+                var mutable = await property.GetMutability();
 
-                if (cardinality != 0) {
+                if (!mutable && cardinality != 0) {
                     var values = await container.GetRelation(relation.PropertyID);
                     if (cardinality <= values.Count()) {
-                        throw new Exception($"Cardinality violation, relation '{relation.PropertyID}' already hax maximum number of values");
+                        throw new Exception($"Cardinality violation, relation '{relation.PropertyID}' already has maximum number of values");
                     }
                 }
 
