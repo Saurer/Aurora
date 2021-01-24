@@ -14,16 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace AuroraCore.Storage {
-    public interface IPropertyProvider {
-        Task<IAttachedProperty<IAttr>> GetAttribute(int attributeID);
-        Task<IAttachedProperty<IRelation>> GetRelation(int relationID);
-        Task<IEnumerable<IAttachedProperty<IAttr>>> GetAttributes();
-        Task<IEnumerable<IAttachedProperty<IRelation>>> GetRelations();
-        Task<IAttachedEvent<IProperty>> GetEvent(int propertyID);
-        Task<IEnumerable<IAttachedEvent<IProperty>>> GetEvents();
+    public interface IAttachedEvent<T> : IEvent where T : IProperty {
+        int AttachmentID { get; }
+        int ProviderID { get; }
+        int PropertyID { get; }
+        string Value { get; }
+
+        Task<T> GetProperty();
     }
 }

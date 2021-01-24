@@ -52,7 +52,7 @@ namespace AuroraCore.Controllers {
                     continue;
                 }
                 else {
-                    throw new Exception($"Unhandled condition rule type: '{condition.GetType()}'");
+                    throw new Exception($"Unhandled condition rule type: '{condition}'");
                 }
             }
 
@@ -166,6 +166,7 @@ namespace AuroraCore.Controllers {
 
             var container = await Storage.GetPropertyContainer(e.BaseEventID);
             var provider = await Storage.GetContainerPropertyProvider(e.BaseEventID);
+            var providerBase = await Storage.GetPropertyProvider(e.BaseEventID);
 
             if (null != provider && null != container) {
                 var attribute = await Storage.GetAttribute(e.ValueID);
@@ -211,6 +212,9 @@ namespace AuroraCore.Controllers {
                 }
 
                 return new TagContainerEffect(e.ID, property.AttachmentID);
+            }
+            else if (null != providerBase) {
+                return new TagProviderEventEffect(e.BaseEventID, e.ValueID);
             }
             else {
                 throw new Exception($"Event '{e.BaseEventID}' has no attached property provider");
@@ -407,6 +411,7 @@ namespace AuroraCore.Controllers {
 
             var container = await Storage.GetPropertyContainer(e.BaseEventID);
             var provider = await Storage.GetContainerPropertyProvider(e.BaseEventID);
+            var providerBase = await Storage.GetPropertyProvider(e.BaseEventID);
 
             if (null != provider && null != container) {
                 var relation = await Storage.GetRelation(e.ValueID);
@@ -443,6 +448,9 @@ namespace AuroraCore.Controllers {
                 }
 
                 return new TagContainerEffect(e.ID, property.AttachmentID);
+            }
+            else if (null != providerBase) {
+                return new TagProviderEventEffect(e.BaseEventID, e.ValueID);
             }
             else {
                 throw new Exception($"Event '{e.BaseEventID}' has no attached property provider");

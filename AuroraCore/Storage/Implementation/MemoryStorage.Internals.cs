@@ -72,5 +72,15 @@ namespace AuroraCore.Storage.Implementation {
             await Task.Yield();
             containerProviders[containerID] = providerID;
         }
+
+        public async Task AddProviderEvent(int providerID, int propertyID) {
+            await Task.Yield();
+
+            if (!providerEvents.ContainsKey(providerID)) {
+                providerEvents[providerID] = new List<int>();
+            }
+
+            providerEvents[providerID].Add(propertyID);
+        }
     }
 }

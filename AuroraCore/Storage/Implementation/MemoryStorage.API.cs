@@ -311,6 +311,36 @@ namespace AuroraCore.Storage.Implementation {
             return relations;
         }
 
+        public async Task<IAttachedEvent<IProperty>> GetPropertyProviderEvent(int providerID, int propertyID) {
+            await Task.Yield();
+
+            var property = (
+                from e in events
+                where
+                    e.Value.BaseEventID == providerID &&
+                    e.Value.ValueID == propertyID
+                select e.Value
+            ).SingleOrDefault();
+
+            if (null == property) {
+                return null;
+            }
+
+            return new AttachedEvent(context, property);
+        }
+
+        public async Task<IEnumerable<IAttachedEvent<IProperty>>> GetPropertyProviderEvents(int providerID) {
+            if (providerEvents.TryGetValue(providerID, out var propertyIDs)) {
+                var properties = await Task.WhenAll(
+                  propertyIDs.Select(id => GetPropertyProviderEvent(providerID, id))
+                );
+
+                return properties;
+            }
+
+            return Array.Empty<IAttachedEvent<IProperty>>();
+        }
+
         public async Task<IEvent> GetPropertyProviderValueConstraint(int providerID, int propertyID, int constraintID) {
             await Task.Yield();
 

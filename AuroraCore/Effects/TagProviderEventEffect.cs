@@ -14,16 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using AuroraCore.Storage;
 
-namespace AuroraCore.Storage {
-    public interface IPropertyProvider {
-        Task<IAttachedProperty<IAttr>> GetAttribute(int attributeID);
-        Task<IAttachedProperty<IRelation>> GetRelation(int relationID);
-        Task<IEnumerable<IAttachedProperty<IAttr>>> GetAttributes();
-        Task<IEnumerable<IAttachedProperty<IRelation>>> GetRelations();
-        Task<IAttachedEvent<IProperty>> GetEvent(int propertyID);
-        Task<IEnumerable<IAttachedEvent<IProperty>>> GetEvents();
+namespace AuroraCore.Effects {
+    public class TagProviderEventEffect : Effect {
+        private readonly int providerID;
+        private readonly int propertyID;
+
+        public TagProviderEventEffect(int providerID, int propertyID) {
+            this.providerID = providerID;
+            this.propertyID = propertyID;
+        }
+
+        public override async Task Execute(IStorageAdapter storage) =>
+            await storage.AddProviderEvent(providerID, propertyID);
     }
 }

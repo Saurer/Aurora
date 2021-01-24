@@ -33,10 +33,16 @@ namespace AuroraCore.Storage.Implementation {
         public async Task<IAttachedProperty<IRelation>> GetRelation(int relationID) =>
             await context.Storage.GetPropertyProviderRelation(providerID, relationID);
 
+        public async Task<IAttachedEvent<IProperty>> GetEvent(int propertyID) =>
+            await context.Storage.GetPropertyProviderEvent(providerID, propertyID);
+
         public async Task<IEnumerable<IAttachedProperty<IAttr>>> GetAttributes() =>
             await context.Storage.GetPropertyProviderAttributes(providerID);
 
         public async Task<IEnumerable<IAttachedProperty<IRelation>>> GetRelations() =>
             await context.Storage.GetPropertyProviderRelations(providerID);
+
+        public async Task<IEnumerable<IAttachedEvent<IProperty>>> GetEvents() =>
+            await context.Storage.GetPropertyProviderEvents(providerID);
     }
 }

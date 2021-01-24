@@ -30,6 +30,9 @@ namespace AuroraCore.Storage.Implementation {
         // Each key represent a direct connection from container to provider
         private Dictionary<int, int> containerProviders = new Dictionary<int, int>();
 
+        // Each key represens a collection of property IDs grouped by a provider ID
+        private Dictionary<int, List<int>> providerEvents = new Dictionary<int, List<int>>();
+
         private IDataContext context;
 
         public MemoryStorage(ITypeManager typeManager) {

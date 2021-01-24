@@ -54,6 +54,8 @@ namespace AuroraCore.Storage {
         Task<IEnumerable<IAttachedProperty<IAttr>>> GetPropertyProviderAttributes(int providerID);
         Task<IAttachedProperty<IRelation>> GetPropertyProviderRelation(int providerID, int relationID);
         Task<IEnumerable<IAttachedProperty<IRelation>>> GetPropertyProviderRelations(int providerID);
+        Task<IAttachedEvent<IProperty>> GetPropertyProviderEvent(int providerID, int propertyID);
+        Task<IEnumerable<IAttachedEvent<IProperty>>> GetPropertyProviderEvents(int providerID);
         Task<IEvent> GetPropertyProviderValueConstraint(int providerID, int propertyID, int constraintID);
         Task<IEnumerable<IEvent>> GetPropertyProviderValueConstraints(int providerID, int propertyID);
         #endregion

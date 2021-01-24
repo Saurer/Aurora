@@ -26,6 +26,7 @@ namespace AuroraCore.Storage {
         Task<bool> IsEventAncestor(int ancestorID, int childID);
         Task AddSubEvent(int ancestorID, int childID);
         Task AddContainer(int containerID, int providerID);
+        Task AddProviderEvent(int providerID, int propertyID);
         #endregion
     }
 }

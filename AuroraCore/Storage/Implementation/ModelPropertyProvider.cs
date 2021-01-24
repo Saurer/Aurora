@@ -38,6 +38,11 @@ namespace AuroraCore.Storage.Implementation {
                 context.Storage.GetPropertyProviderRelation(model.ModelID, relationID)
             );
 
+        public async Task<IAttachedEvent<IProperty>> GetEvent(int propertyID) =>
+            await TraverseParentToEncounter(model =>
+                context.Storage.GetPropertyProviderEvent(model.ModelID, propertyID)
+            );
+
         public async Task<IEnumerable<IAttachedProperty<IAttr>>> GetAttributes() =>
             await TraverseParentToCollection(model =>
                 context.Storage.GetPropertyProviderAttributes(model.ModelID)
@@ -46,6 +51,11 @@ namespace AuroraCore.Storage.Implementation {
         public async Task<IEnumerable<IAttachedProperty<IRelation>>> GetRelations() =>
             await TraverseParentToCollection(model =>
                 context.Storage.GetPropertyProviderRelations(model.ModelID)
+            );
+
+        public async Task<IEnumerable<IAttachedEvent<IProperty>>> GetEvents() =>
+            await TraverseParentToCollection(model =>
+                context.Storage.GetPropertyProviderEvents(model.ModelID)
             );
 
         private async Task<IEnumerable<T>> TraverseParentToCollection<T>(Func<IModel, Task<IEnumerable<T>>> getter) {
